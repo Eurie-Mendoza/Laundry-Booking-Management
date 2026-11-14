@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    
+<div class="view-section p-6 sm:p-8 max-w-7xl w-full mx-auto">
+  <!-- Header -->
+  <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+    <div>
+      <h3 class="text-xl font-black text-slate-900">Booking Management</h3>
+      <p class="text-xs text-gray-500 mt-1">Calendar and customer booking records in one workspace.</p>
+    </div>
+    @if (subView === 'records') {
+      <button (click)="subView = 'add'"
+        class="rounded-xl bg-cyan-700 hover:bg-cyan-800 text-white text-xs font-extrabold px-5 py-3 shadow-sm cursor-pointer">
+        ＋ Add Booking
+      </button>
+    } @else {
+      <button (click)="subView = 'records'"
+        class="rounded-xl bg-slate-800 hover:bg-slate-900 text-white text-xs font-extrabold px-5 py-3 shadow-sm cursor-pointer">
+        ← Back to Records
+      </button>
+    }
+  </div>
+
+  <!-- ADD NEW BOOKING FORM VIEW -->
+  @if (subView === 'add') {
+    <div class="view-section">
+      <div class="mb-6">
+        <h3 class="text-xl font-black text-slate-900">Add New Booking</h3>
+        <p class="text-xs text-gray-500">Complete customer details, service parameters, and verify validation limits before submitting.</p>
+      </div>
+
+      <form (ngSubmit)="submitBooking()" novalidate>
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 items-start">
+
+          <!-- CARD 1: Customer Details -->
+          <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 space-y-4">
+            <div class="flex items-center gap-2 pb-2 border-b border-gray-100">
+              <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+              <h4 class="font-extrabold text-sm text-slate-900">Customer Details</h4>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-gray-700 mb-1">Full Name <span class="text-red-500">*</span></label>
+              <input type="text" name="custName" [(ngModel)]="form.customerName" placeholder="e.g., Maria Clara"
+                class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-gray-300 focus:border-blue-500 focus:outline-none">
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-gray-700 mb-1">Contact Number <span class="text-red-500">*</span></label>
+              <input type="tel" name="custPhone" [(ngModel)]="form.contactNumber" placeholder="e.g., 0917 123 4567"
+                class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-gray-300 focus:border-blue-500 focus:outline-none">
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-gray-700 mb-1">Pickup / Delivery Address <span class="text-red-500">*</span></label>
+              <textarea name="custAddress" [(ngModel)]="form.address" rows="2" placeholder="Street, Barangay, City"
+                class="w-full px-3.5 py-2 text-xs rounded-xl border border-gray-300 focus:border-blue-500 focus:outline-none resize-none"></textarea>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-gray-700 mb-1">Email <span class="text-gray-400 font-normal">(optional)</span></label>
+              <input type="email" name="custEmail" [(ngModel)]="form.email" placeholder="customer@email.com"
+                class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-gray-300 focus:border-blue-500 focus:outline-none">
+            </div>
+          </div>
+
+          <!-- CARD 2: Laundry Service -->
+          <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 space-y-4">
+            <div class="flex items-center gap-2 pb-2 border-b border-gray-100">
+              <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
+              <h4 class="font-extrabold text-sm text-slate-900">Laundry Service</h4>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-gray-700 mb-1">Service Type</label>
+              <select name="serviceType" [(ngModel)]="form.serviceType"
+                class="w-full px-3.5 py-2.5 text-xs font-semibold rounded-xl border border-gray-300 bg-white focus:border-blue-500 focus:outline-none">
+                <option value="Wash & Fold">Wash & Fold — ₱50.00 / kg</option>
+                <option value="Dry Cleaning">Dry Cleaning — ₱120.00 / kg</option>
+                <option value="Ironing">Ironing Only — ₱40.00 / kg</option>
+                <option value="Comforter Wash">Comforter Wash — ₱150.00 / kg</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-gray-700 mb-2">Item Categories</label>
+              <div class="grid grid-cols-2 gap-2 text-xs">
+                @for (cat of availableCategories; track cat) {
+                  <label class="flex items-center gap-2 p-2 rounded-lg border border-gray-200 hover:bg-gray-50 cursor-pointer">
+                    <input type="checkbox" [checked]="form.itemCategories.includes(cat)" (change)="toggleCategory(cat)">
+                    <span>{{ cat }}</span>
+                  </label>
+                }
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-gray-700 mb-1">Custom Notes</label>
+              <textarea name="customNotes" [(ngModel)]="form.notes" rows="3" placeholder="Fabric softener preference, stain alerts..."
+                class="w-full px-3.5 py-2 text-xs rounded-xl border border-gray-300 focus:border-blue-500 focus:outline-none resize-none"></textarea>
+            </div>
+          </div>
+
+          <!-- CARD 3: Booking Parameters & Custom Validators -->
+          <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 space-y-5">
+            <div class="flex items-center justify-between pb-2 border-b border-gray-100">
+              <div class="flex items-center gap-2">
+                <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <h4 class="font-extrabold text-sm text-slate-900">Booking Parameters</h4>
+              </div>
+              <span class="text-[10px] font-bold bg-blue-50 text-blue-700 px-2 py-0.5 rounded">Validated</span>
+            </div>
+
+            <!-- Weight Input -->
+            <div>
+              <div class="flex justify-between items-center mb-1">
+                <label class="text-xs font-bold text-gray-700">Weight (kg) <span class="text-red-500">*</span></label>
+                <span class="text-[10px] font-semibold text-gray-400">Allowed: 3 – 20 kg</span>
+              </div>
+              <input type="number" name="weightKg" [(ngModel)]="form.weightKg" step="0.5"
+                [class.border-red-500]="weightValidationError"
+                class="w-full px-3.5 py-2.5 text-sm font-bold rounded-xl border border-gray-300 focus:border-blue-500 focus:outline-none">
+              
+              @if (weightValidationError) {
+                <div class="mt-2 p-2.5 rounded-xl bg-red-50 border border-red-200 text-[11px] font-semibold text-red-700">
+                  {{ weightValidationError }}
+                </div>
+              }
+            </div>
+
+            <!-- Date Input -->
+            <div>
+              <div class="flex justify-between items-center mb-1">
+                <label class="text-xs font-bold text-gray-700">Pickup / Booking Date <span class="text-red-500">*</span></label>
+                <span class="text-[10px] font-semibold text-gray-400">No Past / Sun</span>
+              </div>
+              <input type="date" name="bookingDate" [(ngModel)]="form.bookingDate"
+                [class.border-red-500]="dateValidationError"
+                class="w-full px-3.5 py-2.5 text-xs font-semibold rounded-xl border border-gray-300 focus:border-blue-500 focus:outline-none">
+              
+              @if (dateValidationError) {
+                <div class="mt-2 p-2.5 rounded-xl bg-red-50 border border-red-200 text-[11px] font-semibold text-red-700">
+                  {{ dateValidationError }}
+                </div>
+              }
+            </div>
+
+            <!-- Express Toggle -->
+            <div class="pt-2 border-t border-gray-100 flex items-center justify-between">
+              <div>
+                <span class="block text-xs font-extrabold text-slate-900">Express Option</span>
+                <span class="text-[11px] text-orange-600 font-semibold">Same-day rush (2x multiplier)</span>
+              </div>
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" name="isExpress" [(ngModel)]="form.isExpress" class="sr-only peer">
+                <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+              </label>
+            </div>
+          </div>
+
+          <!-- CARD 4: Payment & Confirmation -->
+          <div class="bg-slate-50 p-6 rounded-2xl shadow-sm border-2 border-blue-200/80 space-y-5">
+            <div class="flex items-center gap-2 pb-2 border-b border-blue-100">
+              <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+              <h4 class="font-extrabold text-sm text-slate-900">Payment & Confirmation</h4>
+            </div>
+
+            <div class="bg-white p-4 rounded-xl border border-gray-200 space-y-2 text-xs">
+              <div class="flex justify-between text-gray-500">
+                <span>Service Rate:</span>
+                <span class="font-bold text-gray-800">₱{{ currentRate | number:'1.2-2' }} / kg</span>
+              </div>
+              <div class="flex justify-between text-gray-500">
+                <span>Measured Weight:</span>
+                <span class="font-bold text-gray-800">{{ form.weightKg | number:'1.1-1' }} kg</span>
+              </div>
+              <div class="flex justify-between text-gray-500">
+                <span>Base Subtotal:</span>
+                <span class="font-bold text-gray-800">₱{{ baseSubtotal | number:'1.2-2' }}</span>
+              </div>
+              <div class="flex justify-between text-orange-600">
+                <span>Express Surcharge:</span>
+                <span class="font-bold">{{ form.isExpress ? '+₱' + (expressSurcharge | number:'1.2-2') + ' (2x ON)' : '₱0.00 (OFF)' }}</span>
+              </div>
+            </div>
+
+            <div class="pt-1">
+              <span class="block text-[11px] font-extrabold uppercase tracking-wider text-gray-500">Calculated Charges</span>
+              <div class="text-3xl sm:text-4xl font-black text-slate-900 mt-1">₱{{ grandTotal | number:'1.2-2' }}</div>
+              <p class="text-[11px] text-gray-400 mt-1 italic">*Breakdown: Base ₱{{ baseSubtotal | number:'1.2-2' }} + Express ₱{{ expressSurcharge | number:'1.2-2' }}</p>
+            </div>
+
+            <div class="space-y-2.5 pt-2">
+              <button type="submit" [disabled]="!isFormValid"
+                class="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed text-white font-extrabold text-xs py-3.5 px-4 rounded-xl shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer">
+                <span>Submit Booking</span>
+              </button>
+
+              <button type="button" (click)="resetForm()"
+                class="w-full bg-white hover:bg-gray-100 text-gray-700 border border-gray-300 font-bold text-xs py-2.5 px-4 rounded-xl transition-colors cursor-pointer">
+                Reset Form
+              </button>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+  }
+
+  <!-- CUSTOMER RECORDS & CALENDAR VIEW -->
+  @if (subView === 'records') {
+    <div class="space-y-6">
+      <!-- Calendar Preview -->
+      <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 sm:p-6">
+        <div class="flex items-center justify-between gap-3 mb-5">
+          <div>
+            <h4 class="font-extrabold text-slate-900">Booking Calendar</h4>
+            <p class="text-xs text-gray-400 mt-1">Dates with bookings are highlighted. Select a date to preview its schedule.</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button (click)="changeCalendarMonth(-1)" class="calendar-nav cursor-pointer">‹</button>
+            <strong class="text-sm min-w-32 text-center">{{ calendarMonthLabel }}</strong>
+            <button (click)="changeCalendarMonth(1)" class="calendar-nav cursor-pointer">›</button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-7 gap-2 text-center text-[10px] font-bold uppercase text-gray-400 mb-2">
+          <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+        </div>
+
+        <div class="grid grid-cols-7 gap-2">
+          @for (cell of calendarCells; track $index) {
+            @if (!cell.day) {
+              <div class="min-h-16"></div>
+            } @else {
+              <button class="calendar-day cursor-pointer"
+                [class.has-bookings]="cell.bookings.length > 0"
+                [class.selected]="selectedCalendarDate === cell.dateKey"
+                (click)="selectCalendarDate(cell.dateKey)">
+                <span>{{ cell.day }}</span>
+                @if (cell.bookings.length > 0) {
+                  <span class="day-count">{{ cell.bookings.length }} booking{{ cell.bookings.length === 1 ? '' : 's' }}</span>
+                }
+              </button>
+            }
+          }
+        </div>
+
+        <div class="mt-5 rounded-xl bg-cyan-50 border border-cyan-100 p-4 text-xs text-slate-700">
+          @if (selectedDateBookings.length > 0) {
+            <div class="font-extrabold text-cyan-900 mb-2">Schedule for {{ selectedCalendarDate }}</div>
+            @for (b of selectedDateBookings; track b.id) {
+              <div class="py-2 border-t border-cyan-100 flex flex-wrap justify-between gap-2">
+                <span><b>{{ b.customerName }}</b> · {{ b.serviceType }} · {{ b.weightKg | number:'1.1-1' }} kg</span>
+                <button class="font-bold text-cyan-800 cursor-pointer" (click)="openCustomerModal(b)">View details</button>
+              </div>
+            }
+          } @else {
+            <span>Select a highlighted date to see its bookings.</span>
+          }
+        </div>
+      </div>
+
+      <!-- Customer Summary Table -->
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="p-6 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h3 class="font-bold text-slate-900 text-base">Customer Summary</h3>
+            <p class="text-xs text-gray-400">Search laundry records and open a customer profile to review details or update its status</p>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-3">
+            <input type="text" [(ngModel)]="searchQuery" placeholder="Search customer or ID..."
+              class="px-4 py-2 text-xs bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-blue-500 focus:outline-none w-56 transition-all">
+
+            <select [(ngModel)]="statusFilter"
+              class="py-2 px-3 text-xs font-semibold bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 text-gray-700">
+              <option value="ALL">All Statuses</option>
+              <option value="Pending">Pending</option>
+              <option value="In-Progress">In-Progress</option>
+              <option value="Done">Done</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-gray-50/80 text-[11px] font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200">
+                <th class="py-3.5 px-5">Booking ID</th>
+                <th class="py-3.5 px-5">Customer</th>
+                <th class="py-3.5 px-5">Service</th>
+                <th class="py-3.5 px-5">Weight</th>
+                <th class="py-3.5 px-5">Schedule Date</th>
+                <th class="py-3.5 px-5">Priority</th>
+                <th class="py-3.5 px-5">Charges</th>
+                <th class="py-3.5 px-5">Status</th>
+                <th class="py-3.5 px-5 text-right">View</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 text-xs">
+              @for (booking of filteredBookings; track booking.id) {
+                <tr class="hover:bg-slate-50/80 transition-colors">
+                  <td class="py-3.5 px-5 font-extrabold text-slate-900 whitespace-nowrap">{{ booking.id }}</td>
+                  <td class="py-3.5 px-5">
+                    <div class="font-bold text-slate-800">{{ booking.customerName }}</div>
+                    <div class="text-[11px] text-gray-400">{{ booking.contactNumber }}</div>
+                  </td>
+                  <td class="py-3.5 px-5 font-medium text-gray-700 whitespace-nowrap">{{ booking.serviceType }}</td>
+                  <td class="py-3.5 px-5 font-bold text-gray-800 whitespace-nowrap">{{ booking.weightKg | number:'1.1-1' }} kg</td>
+                  <td class="py-3.5 px-5 text-gray-600 whitespace-nowrap">{{ booking.bookingDate }}</td>
+                  <td class="py-3.5 px-5 whitespace-nowrap">
+                    @if (booking.isExpress) {
+                      <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-orange-100 text-orange-700">EXPRESS 2x</span>
+                    } @else {
+                      <span class="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-gray-100 text-gray-500">Standard</span>
+                    }
+                  </td>
+                  <td class="py-3.5 px-5 font-extrabold text-slate-900 whitespace-nowrap">₱{{ booking.totalAmount | number:'1.2-2' }}</td>
+                  <td class="py-3.5 px-5 whitespace-nowrap">
+                    <span class="text-[11px] font-bold px-2.5 py-1.5 rounded-lg"
+                      [class]="booking.status === 'Done' ? 'bg-emerald-50 text-emerald-700' : (booking.status === 'In-Progress' ? 'bg-blue-50 text-blue-700' : 'bg-amber-50 text-amber-700')">
+                      {{ booking.status }}
+                    </span>
+                  </td>
+                  <td class="py-3.5 px-5 text-right whitespace-nowrap">
+                    <button (click)="openCustomerModal(booking)"
+                      class="text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 text-[11px] font-bold px-3 py-2 rounded-lg transition-colors cursor-pointer mr-1">
+                      View
+                    </button>
+                    <button (click)="deleteBooking(booking.id)"
+                      class="text-gray-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50 transition-colors cursor-pointer">
+                      ✕
+                    </button>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="9" class="py-12 text-center">
+                    <p class="text-sm font-bold text-gray-500">No laundry bookings match your filter.</p>
+                    <button (click)="subView = 'add'" class="mt-2 text-xs font-bold text-blue-600 hover:underline cursor-pointer">
+                      + Create a new booking
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- CUSTOMER DETAILS MODAL -->
+  @if (activeModalBooking) {
+    <div class="fixed inset-0 z-40 bg-slate-950/60 p-4 flex items-center justify-center" (click)="closeCustomerModal($event)">
+      <section class="bg-white w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl" (click)="$event.stopPropagation()">
+        <div class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between z-10">
+          <div>
+            <p class="text-[10px] uppercase tracking-widest font-bold text-blue-600">Customer profile</p>
+            <h3 class="text-lg font-black text-slate-900">{{ activeModalBooking.customerName }}</h3>
+            <p class="text-xs text-gray-400 mt-0.5">{{ activeModalBooking.id }}</p>
+          </div>
+          <button (click)="activeModalBooking = null" class="text-gray-400 hover:text-slate-900 text-2xl leading-none px-2 cursor-pointer">×</button>
+        </div>
+
+        <div class="p-6 space-y-5">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div class="bg-slate-50 border border-slate-100 rounded-xl p-3">
+              <p class="text-[10px] uppercase tracking-wide font-bold text-gray-400 mb-1">Contact Number</p>
+              <p class="font-semibold text-slate-800">{{ activeModalBooking.contactNumber || 'Not provided' }}</p>
+            </div>
+            <div class="bg-slate-50 border border-slate-100 rounded-xl p-3">
+              <p class="text-[10px] uppercase tracking-wide font-bold text-gray-400 mb-1">Address</p>
+              <p class="font-semibold text-slate-800">{{ activeModalBooking.address || 'Not provided' }}</p>
+            </div>
+            <div class="bg-slate-50 border border-slate-100 rounded-xl p-3">
+              <p class="text-[10px] uppercase tracking-wide font-bold text-gray-400 mb-1">Service & Weight</p>
+              <p class="font-semibold text-slate-800">{{ activeModalBooking.serviceType }} · {{ activeModalBooking.weightKg }} kg</p>
+            </div>
+            <div class="bg-slate-50 border border-slate-100 rounded-xl p-3">
+              <p class="text-[10px] uppercase tracking-wide font-bold text-gray-400 mb-1">Total Charges</p>
+              <p class="font-semibold text-slate-800">₱{{ activeModalBooking.totalAmount | number:'1.2-2' }}</p>
+            </div>
+          </div>
+
+          <div class="border-t border-gray-100 pt-4">
+            <div class="flex items-center justify-between gap-3 flex-wrap mb-3">
+              <div>
+                <h4 class="font-extrabold text-sm text-slate-900">Booking Status</h4>
+                <p class="text-[11px] text-gray-400">Update the processing status for this booking here.</p>
+              </div>
+              <span class="text-xs font-bold px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700">{{ activeModalBooking.status }}</span>
+            </div>
+            <div class="flex flex-col sm:flex-row gap-2">
+              <select [(ngModel)]="modalStatusDraft"
+                class="flex-1 px-3 py-2.5 text-xs font-semibold border border-gray-300 rounded-xl focus:outline-none focus:border-blue-500">
+                <option value="Pending">Pending</option>
+                <option value="In-Progress">In-Progress</option>
+                <option value="Done">Done</option>
+              </select>
+              <button (click)="saveModalStatus()"
+                class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-5 py-2.5 rounded-xl cursor-pointer">
+                Save Status
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="px-6 py-4 border-t border-gray-100 flex justify-end">
+          <button (click)="activeModalBooking = null" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-5 py-2.5 rounded-xl cursor-pointer">
+            Close
+          </button>
+        </div>
+      </section>
+    </div>
+  }
+</div>
+
+</body>
+</html>

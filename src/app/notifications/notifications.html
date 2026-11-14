@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    
+<div class="fixed inset-0 z-40 bg-slate-950/60 p-4 flex items-center justify-center" (click)="closeModal.emit()">
+  <section class="bg-white w-full max-w-xl max-h-[85vh] overflow-hidden rounded-2xl shadow-2xl flex flex-col" (click)="$event.stopPropagation()">
+    <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+      <div>
+        <p class="text-[10px] uppercase tracking-widest font-bold text-blue-600">L.A.B.A alerts</p>
+        <h3 class="text-lg font-black text-slate-900">Notifications</h3>
+        <p class="text-xs text-gray-400">Booking activity and items that may need attention</p>
+      </div>
+      <button (click)="closeModal.emit()" class="text-gray-400 hover:text-slate-900 text-2xl leading-none px-2 cursor-pointer" aria-label="Close">
+        ×
+      </button>
+    </div>
+
+    <div class="p-5 overflow-y-auto space-y-3">
+      @for (alert of alerts; track alert.id + alert.type) {
+        <button (click)="inspectBooking.emit(alert.id)"
+          class="w-full text-left border rounded-xl p-3 hover:shadow-sm transition-shadow cursor-pointer"
+          [class]="getToneClass(alert.tone)">
+          <div class="flex items-center justify-between gap-2 mb-1">
+            <span class="text-[9px] uppercase tracking-wider font-black">{{ alert.type }}</span>
+            <span class="text-[10px] font-bold opacity-70">{{ alert.id }}</span>
+          </div>
+          <p class="text-xs font-extrabold">{{ alert.title }}</p>
+          <p class="text-[11px] mt-1 opacity-80">{{ alert.detail }}</p>
+        </button>
+      } @empty {
+        <div class="py-10 text-center">
+          <div class="text-3xl mb-2">✓</div>
+          <p class="text-sm font-bold text-slate-700">You're all caught up</p>
+          <p class="text-xs text-gray-400 mt-1">No booking alerts at the moment.</p>
+        </div>
+      }
+    </div>
+
+    <div class="px-6 py-3 border-t border-gray-100 flex justify-end">
+      <button (click)="closeModal.emit()" class="bg-slate-900 hover:bg-blue-600 text-white text-xs font-bold px-5 py-2.5 rounded-xl cursor-pointer">
+        Done
+      </button>
+    </div>
+  </section>
+</div>
+
+</body>
+</html>

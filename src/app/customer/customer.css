@@ -1,0 +1,53 @@
+.view-section {
+  animation: fadeIn 0.25s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.calendar-nav {
+  width: 34px;
+  height: 34px;
+  border: 1px solid #dbe4e8;
+  border-radius: 10px;
+  font-size: 22px;
+  color: #0e7490;
+  background: white;
+}
+
+.calendar-day {
+  min-height: 66px;
+  border: 1px solid #e5edf0;
+  border-radius: 12px;
+  padding: 8px;
+  text-align: left;
+  background: white;
+  font-size: 12px;
+  position: relative;
+}
+
+.calendar-day.has-bookings {
+  background: #cffafe;
+  border: 1px solid #67e8f9;
+  color: #155e75;
+  font-weight: 800;
+}
+
+.calendar-day.selected {
+  outline: 2px solid #0e7490;
+}
+
+.calendar-day .day-count {
+  display: block;
+  font-size: 9px;
+  margin-top: 5px;
+  color: #0e7490;
+}
