@@ -1,65 +1,226 @@
-import { Component, EventEmitter, Output } from '@angular/core';
+
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import {
+  Component,
+  OnInit,
+  inject,
+  ChangeDetectorRef
+} from '@angular/core';
+
+import { BookingService } from '../services/booking.service';
+import { CustomerBooking } from '../rules';
 
 @Component({
   selector: 'app-reports',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule],
   templateUrl: './reports.html',
-  styleUrls: ['./reports.css']
+  styleUrl: './reports.css'
 })
-export class ReportsComponent {
-  @Output() openAllNotifications = new EventEmitter<void>();
-  @Output() selectBooking = new EventEmitter<string>();
+export class ReportsComponent implements OnInit {
 
-  estimateRate = 50;
-  estimateWeight = 5;
-  estimateExpress = false;
+  private bookingService = inject(BookingService);
+  private cdr = inject(ChangeDetectorRef);
 
-  get estimatedTotal(): number {
-    const safeWeight = Math.max(0, Number(this.estimateWeight) || 0);
-    return this.estimateRate * safeWeight * (this.estimateExpress ? 2 : 1);
+  bookings: CustomerBooking[] = [];
+  isLoading = false;
+  errorMessage = '';
+
+  ngOnInit(): void {
+    this.loadReports();
   }
 
-  alertPreviews = [
-    { id: 'BK-1001', type: 'Express priority', title: 'BK-1001 has express priority', detail: 'Juan Dela Cruz • Prioritize this order' },
-    { id: 'BK-1002', type: 'Pending booking', title: 'BK-1002 is awaiting processing', detail: 'Maria Santos • Dry Cleaning' },
-    { id: 'BK-1003', type: 'Completed', title: 'BK-1003 is completed', detail: 'Carlo Mendoza • Ready for pickup' }
-  ];
+  // Load booking records from JSON Server
+  loadReports(): void {
+    this.isLoading = true;
+    this.errorMessage = '';
 
-  todayQueue = [
-    { id: 'BK-1001', customerName: 'Juan Dela Cruz', status: 'In-Progress', isExpress: true },
-    { id: 'BK-1004', customerName: 'Angela Reyes', status: 'In-Progress', isExpress: true },
-    { id: 'BK-1003', customerName: 'Carlo Mendoza', status: 'Done', isExpress: false }
-  ];
+    this.cdr.detectChanges();
 
-  recentActivities = [
-    { message: 'BK-1001 marked In-Progress', time: '10:30 AM' },
-    { message: 'New booking added for Angela Reyes (BK-1004)', time: '09:45 AM' },
-    { message: 'BK-1003 completed and ready for pickup', time: '08:15 AM' }
-  ];
+    this.bookingService.getBookings().subscribe({
 
-  upcomingDays = [
-    { label: 'Sun', dayNum: 15, orders: 0, weight: '0.0' },
-    { label: 'Mon', dayNum: 16, orders: 1, weight: '4.5' },
-    { label: 'Tue', dayNum: 17, orders: 1, weight: '5.0' }
-  ];
+      next: (data) => {
+        this.bookings = data || [];
+        this.isLoading = false;
 
-  weeklyChart = [
-    { day: 'Mon', label: '₱280', heightPct: 45, barClass: 'bg-gray-400 hover:bg-blue-500', highlight: false, closed: false },
-    { day: 'Tue', label: '₱350', heightPct: 58, barClass: 'bg-gray-500 hover:bg-blue-500', highlight: false, closed: false },
-    { day: 'Wed', label: '₱420', heightPct: 70, barClass: 'bg-gray-500 hover:bg-blue-500', highlight: false, closed: false },
-    { day: 'Thu', label: '₱310', heightPct: 52, barClass: 'bg-gray-400 hover:bg-blue-500', highlight: false, closed: false },
-    { day: 'Fri', label: '₱490', heightPct: 82, barClass: 'bg-gray-600 hover:bg-blue-500', highlight: false, closed: false },
-    { day: 'Sat', label: '₱600', heightPct: 95, barClass: 'bg-slate-900 shadow-sm', highlight: true, closed: false },
-    { day: 'Sun', label: 'Closed', heightPct: 10, barClass: 'bg-gray-200', highlight: false, closed: true }
-  ];
+        console.log('Bookings loaded:', this.bookings);
+        console.log('Loading state:', this.isLoading);
 
-  serviceDistributions = [
-    { name: 'Wash & Fold', countLabel: '2 orders', percent: 65, colorClass: 'bg-slate-800' },
-    { name: 'Dry Cleaning', countLabel: '1 order', percent: 35, colorClass: 'bg-blue-600' },
-    { name: 'Express Priority (2x)', countLabel: '2 orders', percent: 50, colorClass: 'bg-orange-500' },
-    { name: 'Comforter & Ironing', countLabel: '1 order', percent: 25, colorClass: 'bg-emerald-500' }
-  ];
+        // Explicitly update the component view
+        this.cdr.detectChanges();
+      },
+
+      error: (error) => {
+        console.error('Reports loading error:', error);
+
+        this.errorMessage =
+          'Unable to load report information. Please check JSON Server.';
+
+        this.isLoading = false;
+
+        this.cdr.detectChanges();
+      }
+
+    });
+  }
+
+  // Automatically identify available services
+  get serviceNames(): string[] {
+    const services = new Set<string>();
+
+    this.bookings.forEach(booking => {
+      if (booking.items?.length) {
+        booking.items.forEach(item => {
+          if (item.serviceName) {
+            services.add(item.serviceName);
+          }
+        });
+      } else {
+        const legacyService = (booking as any).serviceType;
+
+        if (legacyService) {
+          services.add(legacyService);
+        }
+      }
+    });
+
+    return Array.from(services).sort();
+  }
+
+  // Booking status count
+  getStatusCount(status: string): number {
+    return this.bookings.filter(
+      booking => booking.status === status
+    ).length;
+  }
+
+  get totalBookings(): number {
+    return this.bookings.length;
+  }
+
+  get activeBookings(): number {
+    return this.bookings.filter(
+      booking =>
+        booking.status === 'Pending' ||
+        booking.status === 'In Progress'
+    ).length;
+  }
+
+  get completedBookings(): number {
+    return this.getStatusCount('Done');
+  }
+
+  get cancelledBookings(): number {
+    return this.getStatusCount('Cancelled');
+  }
+
+  // Total booking charges
+  get totalRevenue(): number {
+    return this.bookings.reduce(
+      (total, booking) =>
+        total + Number(booking.totalAmount || 0),
+      0
+    );
+  }
+
+  // Total payments received
+  get totalCollected(): number {
+    return this.bookings.reduce(
+      (total, booking) =>
+        total + Number(booking.amountPaid || 0),
+      0
+    );
+  }
+
+  // Remaining balances
+  get outstandingBalance(): number {
+    return this.bookings.reduce(
+      (total, booking) => {
+        const balance = Number(
+          booking.balance ??
+          (
+            Number(booking.totalAmount || 0) -
+            Number(booking.amountPaid || 0)
+          )
+        );
+
+        return total + Math.max(0, balance);
+      },
+      0
+    );
+  }
+
+  // Total laundry weight
+  get totalWeight(): number {
+    return this.bookings.reduce(
+      (total, booking) => {
+        const weight = Number(
+          booking.totalWeight ||
+          (booking as any).weightKg ||
+          0
+        );
+
+        return total + weight;
+      },
+      0
+    );
+  }
+
+  // Express bookings
+  get expressBookings(): number {
+    return this.bookings.filter(
+      booking => booking.isExpress === true
+    ).length;
+  }
+
+  // Average booking value
+  get averageBookingValue(): number {
+    return this.totalBookings
+      ? this.totalRevenue / this.totalBookings
+      : 0;
+  }
+
+  // Count bookings containing a service
+  getServiceCount(serviceName: string): number {
+    return this.bookings.filter(booking => {
+      if (booking.items?.length) {
+        return booking.items.some(
+          item => item.serviceName === serviceName
+        );
+      }
+
+      return (booking as any).serviceType === serviceName;
+    }).length;
+  }
+
+  // Service percentage
+  getServicePercentage(serviceName: string): number {
+    if (!this.totalBookings) {
+      return 0;
+    }
+
+    return Math.round(
+      (this.getServiceCount(serviceName) / this.totalBookings) * 100
+    );
+  }
+
+  // Booking status percentage
+  getStatusPercentage(status: string): number {
+    if (!this.totalBookings) {
+      return 0;
+    }
+
+    return Math.round(
+      (this.getStatusCount(status) / this.totalBookings) * 100
+    );
+  }
+
+  // Philippine Peso currency
+  currency(value: number): string {
+    return new Intl.NumberFormat('en-PH', {
+      style: 'currency',
+      currency: 'PHP'
+    }).format(Number(value || 0));
+  }
+
 }

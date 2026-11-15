@@ -1,86 +1,87 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-</head>
-<body>
-    
-<section id="login-view" class="min-h-screen w-full flex flex-col md:flex-row bg-[#f4f6f8]">
-  <!-- Left Panel: Grey Container & White Rounded Login Card -->
-  <div class="w-full md:w-1/2 bg-[#d1d5db] flex flex-col justify-center items-center p-6 sm:p-12 relative min-h-[50vh] md:min-h-screen">
-    <span class="absolute top-6 left-6 text-xs font-extrabold tracking-widest text-gray-500 uppercase">LOGIN</span>
-    
-    <div class="w-full max-w-md">
-      <h2 class="text-lg font-extrabold text-gray-900 mb-3 tracking-tight">LOG-IN Form</h2>
-      
-      <form (ngSubmit)="onSubmit()" class="bg-white rounded-3xl p-8 sm:p-10 shadow-lg border border-gray-100 space-y-5">
-        <div>
-          <label for="login-username" class="block text-xs font-semibold text-gray-600 mb-1.5">Username</label>
-          <input type="text" id="login-username" name="username" [(ngModel)]="username" placeholder="Enter staff username" required
-            class="w-full h-11 px-4 rounded-xl bg-gray-200/80 border border-transparent focus:border-blue-500 focus:bg-white focus:outline-none text-sm font-medium text-gray-900 transition-all">
+
+<section class="login-page">
+
+  <div class="login-left">
+
+    <span class="login-label">LOGIN</span>
+
+    <div class="login-content">
+
+      <h2>LOG-IN Form</h2>
+
+      <form class="login-card" (ngSubmit)="login()">
+
+        <div class="form-group">
+          <label for="username">Username</label>
+
+          <input
+            id="username"
+            type="text"
+            name="username"
+            [(ngModel)]="username"
+            placeholder="Enter staff username"
+            required
+          />
         </div>
 
-        <div>
-          <label for="login-password" class="block text-xs font-semibold text-gray-600 mb-1.5">Password</label>
-          <input type="password" id="login-password" name="password" [(ngModel)]="password" placeholder="Enter password" required
-            class="w-full h-11 px-4 rounded-xl bg-gray-200/80 border border-transparent focus:border-blue-500 focus:bg-white focus:outline-none text-sm font-medium text-gray-900 transition-all">
+        <div class="form-group">
+          <label for="password">Password</label>
+
+          <input
+            id="password"
+            type="password"
+            name="password"
+            [(ngModel)]="password"
+            placeholder="Enter password"
+            required
+          />
         </div>
 
-        @if (showError) {
-          <div class="text-xs font-semibold text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-            Please enter both username and password.
+        @if (errorMessage) {
+          <div class="login-error">
+            {{ errorMessage }}
           </div>
         }
 
-        <div class="pt-2 flex items-center justify-between">
-          <span class="text-[11px] text-gray-400 font-medium">Demo: <strong class="text-gray-600">admin</strong> / <strong class="text-gray-600">1234</strong></span>
-          <button type="submit"
-            class="bg-gray-300 hover:bg-slate-900 hover:text-white text-gray-800 font-bold text-xs px-6 py-2.5 rounded-xl transition-all shadow-sm cursor-pointer">
+        <div class="login-actions">
+
+          <span class="demo-credentials">
+            Demo:
+            <strong>admin / 1234</strong>
+          </span>
+
+          <button type="submit" [disabled]="isLoading">
             Log-in
           </button>
+
         </div>
+
       </form>
+
     </div>
   </div>
 
-  <!-- Right Panel: Brand Showcase & Custom SVG Emblem -->
-  <div class="w-full md:w-1/2 bg-[#f8fafc] flex flex-col justify-center items-center p-8 text-center min-h-[50vh] md:min-h-screen">
-    <div class="max-w-md flex flex-col items-center">
-      <div class="w-36 h-36 rounded-full bg-white shadow-md border-4 border-sky-200 flex items-center justify-center mb-6 relative">
-        <svg class="w-24 h-24" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="58" cy="52" r="24" stroke="#0284c7" stroke-width="4" fill="#e0f2fe"/>
-          <path d="M58 38V52L67 58" stroke="#0369a1" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M36 28C46 18 68 18 80 28" stroke="#06b6d4" stroke-width="3.5" stroke-linecap="round"/>
-          <path d="M75 22L82 29L73 32" stroke="#06b6d4" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
-          <rect x="48" y="54" width="38" height="44" rx="6" fill="#ffffff" stroke="#0f172a" stroke-width="3.5"/>
-          <line x1="48" y1="64" x2="86" y2="64" stroke="#0f172a" stroke-width="3"/>
-          <circle cx="55" cy="59" r="1.8" fill="#f97316"/>
-          <circle cx="61" cy="59" r="1.8" fill="#0284c7"/>
-          <circle cx="67" cy="80" r="11" fill="#bae6fd" stroke="#0f172a" stroke-width="3"/>
-          <path d="M59 81C63 77 70 84 75 79" stroke="#0284c7" stroke-width="3" stroke-linecap="round"/>
-          <path d="M26 56C22 74 36 96 63 96C51 91 41 80 42 64C43 54 32 48 26 56Z" fill="#0284c7"/>
-          <circle cx="24" cy="44" r="3.5" fill="#38bdf8"/>
-          <circle cx="33" cy="38" r="2.5" fill="#7dd3fc"/>
-          <circle cx="90" cy="36" r="13" fill="#ffffff" stroke="#0284c7" stroke-width="3"/>
-          <rect x="83" y="30" width="14" height="6" rx="3" fill="#38bdf8"/>
-          <path d="M90 34V43M87 38L90 34L93 38" stroke="#0f172a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
+  <div class="login-right">
+
+    <div class="brand-content">
+
+      <div class="brand-icon">L</div>
+
+      <h1>L.A.B.A.</h1>
+
+      <h2>Laundry Automated Booking Assistant</h2>
+
+      <p>
+        A smarter and more organized way to manage your laundry
+        bookings, customers, services, and payments.
+      </p>
+
+      <div class="brand-footer">
+        LAUNDRY BOOKING MANAGEMENT SYSTEM
       </div>
 
-      <h1 class="text-5xl sm:text-6xl font-black tracking-wider mb-2 select-none">
-        <span class="text-[#f97316]">L</span><span class="text-[#0284c7]">.</span><span class="text-[#0f172a]">A</span><span class="text-[#0284c7]">.</span><span class="text-[#f97316]">B</span><span class="text-[#0284c7]">.</span><span class="text-[#f97316]">A</span>
-      </h1>
-      <p class="text-sm sm:text-base font-extrabold text-slate-800 tracking-wide uppercase">
-        Laundry Automated Booking Assistant
-      </p>
-      <p class="text-xs text-slate-400 mt-3 max-w-xs">
-        Smart shop booking manager with automated pricing and real-time validation.
-      </p>
     </div>
-  </div>
-</section>
 
-</body>
-</html>
+  </div>
+
+</section>

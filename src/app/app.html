@@ -1,151 +1,267 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Document</title>
-</head>
-<body>
 
-@if (!isAuthenticated) {
-  <app-log-in (loginSuccess)="onLoginSuccess($event)"></app-log-in>
-} @else {
-  <div class="min-h-screen w-full flex flex-col lg:flex-row bg-[#f4f6f8] text-slate-800 antialiased selection:bg-blue-100 selection:text-blue-900">
-    
-    <!-- Left Navigation Sidebar -->
-    <aside class="w-full lg:w-64 bg-[#0f172a] text-white flex flex-col justify-between shrink-0 border-b lg:border-b-0 lg:border-r border-slate-800">
-      <div>
-        <!-- Brand Header -->
-        <div class="p-5 border-b border-slate-800 flex items-center justify-between lg:justify-start gap-3">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-sm shrink-0">
-              <svg class="w-7 h-7" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="58" cy="52" r="24" stroke="#0284c7" stroke-width="5" fill="#e0f2fe"/>
-                <rect x="48" y="54" width="38" height="44" rx="6" fill="#ffffff" stroke="#0f172a" stroke-width="5"/>
-                <circle cx="67" cy="80" r="10" fill="#38bdf8" stroke="#0f172a" stroke-width="4"/>
-                <path d="M26 56C22 74 36 96 63 96" stroke="#0284c7" stroke-width="8" stroke-linecap="round"/>
-              </svg>
-            </div>
-            <div>
-              <div class="font-black text-base tracking-wider leading-none">
-                <span class="text-orange-400">L</span>.<span class="text-white">A</span>.<span class="text-orange-400">B</span>.<span class="text-orange-400">A</span>
-              </div>
-              <p class="text-[10px] text-slate-400 mt-1 font-medium">Booking Manager</p>
-            </div>
-          </div>
+<div
+  class="app-layout"
+  [class.sidebar-collapsed]="sidebarCollapsed"
+  [class.mobile-sidebar-open]="mobileSidebarOpen">
 
-          <button (click)="handleLogout()" class="lg:hidden text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg font-semibold">
-            Log out
-          </button>
-        </div>
-
-        <!-- Navigation Menu -->
-        <nav class="p-4 flex lg:flex-col gap-2 overflow-x-auto">
-          <button (click)="switchTab('overview')"
-            [class]="activeTab === 'overview' ? 'bg-cyan-700 text-white' : 'text-slate-300 hover:bg-slate-800 hover:text-white'"
-            class="flex items-center gap-3 px-4 py-2.5 rounded-xl font-semibold text-xs sm:text-sm transition-all shadow-sm whitespace-nowrap cursor-pointer">
-            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
-            Overview
-          </button>
-
-          <button (click)="switchTab('management')"
-            [class]="activeTab === 'management' ? 'bg-cyan-700 text-white' : 'text-slate-300 hover:bg-slate-800 hover:text-white'"
-            class="flex items-center gap-3 px-4 py-2.5 rounded-xl font-semibold text-xs sm:text-sm transition-all shadow-sm whitespace-nowrap cursor-pointer">
-            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-            Booking Management
-          </button>
-
-          <button (click)="openNotifications()"
-            class="relative flex items-center gap-3 px-4 py-2.5 rounded-xl text-slate-300 hover:bg-slate-800 hover:text-white font-semibold text-xs sm:text-sm transition-all whitespace-nowrap cursor-pointer">
-            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.4-1.4A2 2 0 0118 14.2V11a6 6 0 00-5-5.9V4a1 1 0 00-2 0v1.1A6 6 0 006 11v3.2a2 2 0 01-.6 1.4L4 17h5m6 0a3 3 0 01-6 0"/></svg>
-            Notifications
-            @if (notificationCount > 0) {
-              <span class="ml-auto min-w-5 h-5 px-1 rounded-full bg-orange-500 text-white text-[10px] font-black flex items-center justify-center">
-                {{ notificationCount > 99 ? '99+' : notificationCount }}
-              </span>
-            }
-          </button>
-
-          <!-- Shop Rules Quick Reference Card -->
-          <div class="hidden lg:block mt-6 bg-slate-800/70 border border-slate-700/80 rounded-2xl p-4 space-y-2.5">
-            <div class="text-[11px] font-bold uppercase tracking-wider text-sky-400 flex items-center gap-1.5">
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-              Shop Rules
-            </div>
-            <ul class="text-[11px] text-slate-300 space-y-1.5 leading-relaxed">
-              <li>• Min Load: <strong class="text-white">3.0 kg</strong></li>
-              <li>• Max Load: <strong class="text-white">20.0 kg</strong></li>
-              <li>• Express Option: <strong class="text-orange-400">2x Rate</strong></li>
-              <li>• Closed: <strong class="text-red-400">Sundays</strong></li>
-            </ul>
-          </div>
-        </nav>
-      </div>
-
-      <!-- Sidebar Footer -->
-      <div class="hidden lg:block p-4 border-t border-slate-800">
-        <div class="flex items-center gap-3 mb-3 px-2">
-          <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center font-bold text-xs text-white">AD</div>
-          <div class="overflow-hidden">
-            <p class="text-xs font-bold text-white truncate">{{ currentUser }}</p>
-            <p class="text-[10px] text-emerald-400 font-medium">● Shop Open</p>
-          </div>
-        </div>
-        <button (click)="handleLogout()"
-          class="w-full bg-slate-800 hover:bg-red-600/90 text-slate-300 hover:text-white text-xs font-bold py-2.5 rounded-xl transition-colors cursor-pointer">
-          Log out
-        </button>
-      </div>
-    </aside>
-
-    <!-- Main Workspace Content Area -->
-    <main class="flex-1 flex flex-col min-w-0 overflow-y-auto">
-      <header class="bg-white border-b border-gray-200 px-6 sm:px-8 py-4 flex items-center justify-between sticky top-0 z-20">
-        <div>
-          <span class="text-[11px] font-bold uppercase tracking-wider text-gray-400">{{ breadcrumbLabel }}</span>
-          <h2 class="text-lg sm:text-xl font-extrabold text-slate-900">{{ pageTitle }}</h2>
-        </div>
-
-        <div class="bg-slate-900 text-white px-4 py-2.5 rounded-xl shadow-sm min-w-[155px] text-right">
-          <div class="text-base sm:text-lg font-black tracking-wider tabular-nums">{{ headerClockTime }}</div>
-          <div class="text-[9px] text-slate-300 font-semibold tracking-wide">{{ headerClockDate }}</div>
-        </div>
-      </header>
-
-      <!-- Active View Routing -->
-      @if (activeTab === 'overview') {
-        <app-reports 
-          (openAllNotifications)="openNotifications()" 
-          (selectBooking)="handleSelectBooking($event)">
-        </app-reports>
-      } @else {
-        <app-customer 
-          [selectedBookingId]="selectedBookingIdForModal"
-          (clearSelectedBooking)="selectedBookingIdForModal = null"
-          (notify)="triggerToast($event)">
-        </app-customer>
-      }
-    </main>
+  <!-- Mobile overlay -->
+  <div
+    class="sidebar-overlay"
+    *ngIf="mobileSidebarOpen"
+    (click)="toggleMobileSidebar()">
   </div>
 
-  <!-- Notifications Modal Component -->
-  @if (isNotificationsOpen) {
-    <app-notifications 
-      (closeModal)="closeNotifications()" 
-      (inspectBooking)="handleSelectBooking($event)">
-    </app-notifications>
-  }
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
 
-  <!-- Toast Banner -->
-  @if (toastMessage) {
-    <div class="fixed bottom-5 right-5 z-50 transition-all duration-300 pointer-events-none">
-      <div class="bg-slate-900 text-white px-5 py-3.5 rounded-2xl shadow-xl border border-slate-700 flex items-center gap-3 text-xs font-bold">
-        <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
-        <span>{{ toastMessage }}</span>
+    <!-- Sidebar header -->
+    <div class="sidebar-header">
+
+      <div class="brand">
+        <div class="brand-logo">
+          <span>L</span>
+        </div>
+
+        <span class="brand-name" *ngIf="!sidebarCollapsed">
+          L.A.B.A.
+        </span>
       </div>
-    </div>
-  }
-}  
 
-</body>
-</html>
+      <button
+        type="button"
+        class="menu-toggle"
+        (click)="toggleSidebar()"
+        aria-label="Collapse or expand sidebar">
+        <span>☰</span>
+      </button>
+
+    </div>
+
+    <!-- Navigation -->
+    <nav class="sidebar-navigation">
+
+      <p class="navigation-label" *ngIf="!sidebarCollapsed">
+        MAIN MENU
+      </p>
+
+      <button
+        type="button"
+        class="nav-item"
+        [class.active]="activeTab === 'overview'"
+        (click)="setActiveTab('overview')">
+
+        <span class="nav-icon">⌂</span>
+        <span class="nav-text" *ngIf="!sidebarCollapsed">
+          Overview
+        </span>
+      </button>
+
+      <button
+        type="button"
+        class="nav-item"
+        [class.active]="activeTab === 'booking-management'"
+        (click)="setActiveTab('booking-management')">
+
+        <span class="nav-icon">▣</span>
+        <span class="nav-text" *ngIf="!sidebarCollapsed">
+          Booking Management
+        </span>
+      </button>
+
+      <button
+        type="button"
+        class="nav-item"
+        [class.active]="activeTab === 'notifications'"
+        (click)="setActiveTab('notifications')">
+
+        <span class="nav-icon">♧</span>
+        <span class="nav-text" *ngIf="!sidebarCollapsed">
+          Notifications
+        </span>
+      </button>
+
+      <button
+        type="button"
+        class="nav-item"
+        [class.active]="activeTab === 'reports'"
+        (click)="setActiveTab('reports')">
+
+        <span class="nav-icon">▤</span>
+        <span class="nav-text" *ngIf="!sidebarCollapsed">
+          Reports
+        </span>
+      </button>
+
+    </nav>
+
+    <!-- Sidebar bottom -->
+    <div class="sidebar-bottom">
+
+      <p class="navigation-label" *ngIf="!sidebarCollapsed">
+        PREFERENCES
+      </p>
+
+      <button
+        type="button"
+        class="nav-item"
+        [class.active]="activeTab === 'settings'"
+        (click)="setActiveTab('settings')">
+
+        <span class="nav-icon">⚙</span>
+        <span class="nav-text" *ngIf="!sidebarCollapsed">
+          Shop Settings
+        </span>
+      </button>
+
+    </div>
+
+    <!-- User information -->
+    <div class="sidebar-user" *ngIf="!sidebarCollapsed">
+
+      <div class="user-avatar">AD</div>
+
+      <div class="user-information">
+        <strong>Admin Staff</strong>
+        <span>Shop Administrator</span>
+      </div>
+
+    </div>
+
+  </aside>
+
+  <!-- MAIN WORKSPACE -->
+  <main class="main-content">
+
+    <!-- Top header -->
+    <header class="top-header">
+
+      <div class="header-title">
+        <span>LAUNDRY MANAGEMENT SYSTEM</span>
+
+        <h1>
+          {{
+            activeTab === 'overview' ? 'Overview' :
+            activeTab === 'booking-management' ? 'Booking Management' :
+            activeTab === 'notifications' ? 'Notifications' :
+            activeTab === 'reports' ? 'Reports' :
+            'Shop Settings'
+          }}
+        </h1>
+      </div>
+
+      <button
+        type="button"
+        class="mobile-menu-toggle"
+        (click)="toggleMobileSidebar()"
+        aria-label="Open navigation">
+        ☰
+      </button>
+
+      <div class="header-clock">
+        <strong>{{ 'L.A.B.A.' }}</strong>
+        <span>Laundry Booking Manager</span>
+      </div>
+
+    </header>
+
+    <!-- PAGE CONTENT -->
+    <div class="page-content">
+
+      <ng-container [ngSwitch]="activeTab">
+
+        <!-- OVERVIEW -->
+        <section *ngSwitchCase="'overview'" class="overview-page">
+
+          <div class="welcome-section">
+            <div>
+              <h2>Welcome back!</h2>
+              <p>Here's what's happening in your laundry shop.</p>
+            </div>
+          </div>
+
+          <!-- Overview notification card -->
+          <section class="overview-notification-card">
+            <div>
+              <h3>Notifications</h3>
+              <p>Check important booking alerts and updates.</p>
+            </div>
+
+            <button
+              type="button"
+              (click)="setActiveTab('notifications')">
+              View all →
+            </button>
+          </section>
+
+          <!-- Overview reports and metrics -->
+          <div class="overview-metrics">
+
+            <article class="metric-card">
+              <span>Total Revenue</span>
+              <strong>₱0.00</strong>
+              <small>Based on recorded payments</small>
+            </article>
+
+            <article class="metric-card">
+              <span>Total Bookings</span>
+              <strong>0</strong>
+              <small>All recorded bookings</small>
+            </article>
+
+            <article class="metric-card">
+              <span>Pending Bookings</span>
+              <strong>0</strong>
+              <small>Awaiting processing</small>
+            </article>
+
+            <article class="metric-card">
+              <span>Completed Bookings</span>
+              <strong>0</strong>
+              <small>Finished laundry orders</small>
+            </article>
+
+          </div>
+
+          <section class="overview-report-card">
+            <div>
+              <h3>Reports Overview</h3>
+              <p>View your laundry shop's financial and booking performance.</p>
+            </div>
+
+            <button
+              type="button"
+              (click)="setActiveTab('reports')">
+              Open Reports →
+            </button>
+          </section>
+
+        </section>
+
+        <!-- BOOKING MANAGEMENT -->
+        <app-customer
+          *ngSwitchCase="'booking-management'">
+        </app-customer>
+
+        <!-- NOTIFICATIONS -->
+        <app-notifications
+          *ngSwitchCase="'notifications'">
+        </app-notifications>
+
+        <!-- REPORTS -->
+        <app-reports
+          *ngSwitchCase="'reports'">
+        </app-reports>
+
+        <!-- SETTINGS -->
+        <section *ngSwitchCase="'settings'" class="settings-page">
+          <h2>Shop Settings</h2>
+          <p>Manage your laundry shop information, service rates, and operating rules.</p>
+        </section>
+
+      </ng-container>
+
+    </div>
+
+  </main>
+
+</div>

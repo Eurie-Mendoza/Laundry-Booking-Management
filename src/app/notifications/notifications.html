@@ -1,53 +1,107 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-</head>
-<body>
-    
-<div class="fixed inset-0 z-40 bg-slate-950/60 p-4 flex items-center justify-center" (click)="closeModal.emit()">
-  <section class="bg-white w-full max-w-xl max-h-[85vh] overflow-hidden rounded-2xl shadow-2xl flex flex-col" (click)="$event.stopPropagation()">
-    <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+
+<div class="notifications-container">
+
+  <div class="notification-heading">
+    <div>
+      <h2>Notifications</h2>
+      <p>Booking activity and reminders that may need attention.</p>
+    </div>
+
+    <button class="refresh-button" (click)="refresh()">
+      ↻ Refresh
+    </button>
+  </div>
+
+  <div class="notification-summary">
+
+    <article class="summary-card">
+      <span>Pending Bookings</span>
+      <strong>{{ pendingCount }}</strong>
+    </article>
+
+    <article class="summary-card">
+      <span>Express Priority</span>
+      <strong>{{ expressCount }}</strong>
+    </article>
+
+    <article class="summary-card">
+      <span>Upcoming Pickups</span>
+      <strong>{{ pickupCount }}</strong>
+    </article>
+
+    <article class="summary-card">
+      <span>Completed</span>
+      <strong>{{ completedCount }}</strong>
+    </article>
+
+  </div>
+
+  <section class="notification-panel">
+
+    <div class="panel-title">
       <div>
-        <p class="text-[10px] uppercase tracking-widest font-bold text-blue-600">L.A.B.A alerts</p>
-        <h3 class="text-lg font-black text-slate-900">Notifications</h3>
-        <p class="text-xs text-gray-400">Booking activity and items that may need attention</p>
+        <h3>Booking Alerts</h3>
+        <p>{{ notifications.length }} notifications</p>
       </div>
-      <button (click)="closeModal.emit()" class="text-gray-400 hover:text-slate-900 text-2xl leading-none px-2 cursor-pointer" aria-label="Close">
-        ×
-      </button>
     </div>
 
-    <div class="p-5 overflow-y-auto space-y-3">
-      @for (alert of alerts; track alert.id + alert.type) {
-        <button (click)="inspectBooking.emit(alert.id)"
-          class="w-full text-left border rounded-xl p-3 hover:shadow-sm transition-shadow cursor-pointer"
-          [class]="getToneClass(alert.tone)">
-          <div class="flex items-center justify-between gap-2 mb-1">
-            <span class="text-[9px] uppercase tracking-wider font-black">{{ alert.type }}</span>
-            <span class="text-[10px] font-bold opacity-70">{{ alert.id }}</span>
-          </div>
-          <p class="text-xs font-extrabold">{{ alert.title }}</p>
-          <p class="text-[11px] mt-1 opacity-80">{{ alert.detail }}</p>
-        </button>
-      } @empty {
-        <div class="py-10 text-center">
-          <div class="text-3xl mb-2">✓</div>
-          <p class="text-sm font-bold text-slate-700">You're all caught up</p>
-          <p class="text-xs text-gray-400 mt-1">No booking alerts at the moment.</p>
-        </div>
-      }
-    </div>
+    @if (isLoading) {
+      <div class="notification-empty">
+        Loading notifications...
+      </div>
+    } @else if (errorMessage) {
+      <div class="notification-error">
+        {{ errorMessage }}
+      </div>
+    } @else if (notifications.length === 0) {
+      <div class="notification-empty">
+        <div class="empty-icon">✓</div>
+        <h3>You're all caught up!</h3>
+        <p>No booking alerts require your attention right now.</p>
+      </div>
+    } @else {
 
-    <div class="px-6 py-3 border-t border-gray-100 flex justify-end">
-      <button (click)="closeModal.emit()" class="bg-slate-900 hover:bg-blue-600 text-white text-xs font-bold px-5 py-2.5 rounded-xl cursor-pointer">
-        Done
-      </button>
-    </div>
+      <div class="notification-list">
+
+        @for (notification of notifications; track notification.id) {
+
+          <article
+            class="notification-item"
+            [class.warning]="notification.type === 'warning'"
+            [class.info]="notification.type === 'info'"
+            [class.success]="notification.type === 'success'"
+            [class.priority]="notification.type === 'priority'">
+
+            <div class="notification-icon">
+              @switch (notification.type) {
+                @case ('warning') { ! }
+                @case ('info') { i }
+                @case ('success') { ✓ }
+                @case ('priority') { ★ }
+              }
+            </div>
+
+            <div class="notification-content">
+              <div class="notification-title-row">
+                <h4>{{ notification.title }}</h4>
+                <span>{{ notification.date | date:'MMM d, y' }}</span>
+              </div>
+
+              <p>{{ notification.message }}</p>
+
+              @if (notification.bookingId) {
+                <small>Booking: {{ notification.bookingId }}</small>
+              }
+            </div>
+
+          </article>
+
+        }
+
+      </div>
+
+    }
+
   </section>
-</div>
 
-</body>
-</html>
+</div>

@@ -1,31 +1,37 @@
+
 import { Component, EventEmitter, Output } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-log-in',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [FormsModule],
   templateUrl: './log-in.html',
-  styleUrls: ['./log-in.css']
+  styleUrl: './log-in.css'
 })
 export class LogInComponent {
   username = 'admin';
   password = '1234';
-  showError = false;
+
+  errorMessage = '';
+  isLoading = false;
 
   @Output() loginSuccess = new EventEmitter<string>();
 
-  onSubmit(): void {
-    const trimmedUser = this.username.trim();
-    const trimmedPass = this.password.trim();
+  login(): void {
+    this.errorMessage = '';
 
-    if (!trimmedUser || !trimmedPass) {
-      this.showError = true;
+    if (!this.username.trim() || !this.password.trim()) {
+      this.errorMessage = 'Please enter both username and password.';
       return;
     }
 
-    this.showError = false;
-    this.loginSuccess.emit(trimmedUser);
+    // Demonstration credentials from the original HTML.
+    if (this.username === 'admin' && this.password === '1234') {
+      this.loginSuccess.emit(this.username);
+      return;
+    }
+
+    this.errorMessage = 'Invalid username or password.';
   }
 }

@@ -1,0 +1,76 @@
+{
+  "bookings": [
+    {
+      "id": "LABA-2026-267158",
+      "bookingNumber": "LABA-2026-267158",
+      "customerName": "Eurie hshshshshsh",
+      "phoneNumber": "sadadsa",
+      "email": "sadsda",
+      "address": "dasdaadd",
+      "bookingDate": "2026-11-16",
+      "pickupDate": "2026-11-23",
+      "items": [
+        {
+          "serviceId": 2,
+          "itemCategoryId": 1,
+          "serviceName": "Dry Cleaning",
+          "categoryName": "Tops",
+          "weight": 3,
+          "pricePerKg": 120,
+          "subtotal": 360
+        }
+      ],
+      "totalWeight": 3,
+      "subtotal": 360,
+      "isExpress": true,
+      "expressMultiplier": 2,
+      "totalAmount": 720,
+      "amountPaid": 720,
+      "balance": 0,
+      "paymentStatus": "Paid",
+      "paymentMethod": "Cash",
+      "status": "Pending",
+      "notes": "",
+      "createdAt": "2026-11-15T10:57:47.158Z",
+      "updatedAt": "2026-11-15T15:09:56.603Z",
+      "weightKg": 3,
+      "servicePrice": 360
+    },
+    {
+      "id": "LABA-2026-928998",
+      "bookingNumber": "LABA-2026-928998",
+      "customerName": "jaun d",
+      "phoneNumber": "12312123",
+      "email": "",
+      "address": "sfzcaas",
+      "bookingDate": "2026-11-16",
+      "pickupDate": "2026-11-17",
+      "items": [
+        {
+          "serviceId": 4,
+          "itemCategoryId": 2,
+          "serviceName": "Comforter Wash",
+          "categoryName": "Bottoms",
+          "weight": 3,
+          "pricePerKg": 150,
+          "subtotal": 450
+        }
+      ],
+      "weightKg": 3,
+      "totalWeight": 3,
+      "servicePrice": 450,
+      "subtotal": 450,
+      "isExpress": true,
+      "expressMultiplier": 2,
+      "totalAmount": 900,
+      "amountPaid": 0,
+      "balance": 900,
+      "paymentStatus": "Unpaid",
+      "paymentMethod": "Cash",
+      "status": "Pending",
+      "notes": "",
+      "createdAt": "2026-11-15T16:25:28.998Z",
+      "updatedAt": "2026-11-15T16:25:28.998Z"
+    }
+  ]
+}
