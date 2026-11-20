@@ -1,6 +1,11 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, OnInit, inject } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import {
+  Component,
+  Input,
+  OnInit,
+  inject,
+  ChangeDetectorRef
+} from '@angular/core';import { FormsModule } from '@angular/forms';
 
 import { BookingService } from '../services/booking.service';
 import {
@@ -34,7 +39,7 @@ type BookingFormItem = {
 })
 export class CustomerComponent implements OnInit {
   private bookingService = inject(BookingService);
-
+  private cdr = inject(ChangeDetectorRef);
   @Input() initialView: 'records' | 'customers' = 'records';
 
   bookings: BookingRecord[] = [];
@@ -175,25 +180,37 @@ receiptBooking: BookingRecord | null = null;
   // --------------------------------------------------
 
   loadBookings(): void {
-    this.isLoading = true;
-    this.errorMessage = '';
+  this.isLoading = true;
+  this.errorMessage = '';
 
-    this.bookingService.getBookings().subscribe({
-      next: data => {
-        this.bookings = data.map(booking =>
-          this.normalizeBooking(booking)
-        );
+  this.cdr.markForCheck();
 
-        this.isLoading = false;
-      },
-      error: () => {
-        this.errorMessage =
-          'Unable to load bookings. Make sure JSON Server is running.';
+  this.bookingService.getBookings().subscribe({
+    next: data => {
+      this.bookings = data.map(booking =>
+        this.normalizeBooking(booking)
+      );
 
-        this.isLoading = false;
-      }
-    });
-  }
+      this.isLoading = false;
+
+      // Notify Angular that the view needs updating.
+      this.cdr.markForCheck();
+
+      console.log('Bookings loaded successfully:', this.bookings);
+    },
+
+    error: error => {
+      console.error('Unable to load bookings:', error);
+
+      this.errorMessage =
+        'Unable to load bookings. Make sure JSON Server is running.';
+
+      this.isLoading = false;
+
+      this.cdr.markForCheck();
+    }
+  });
+}
 
   private normalizeBooking(
     booking: CustomerBooking
@@ -1025,4 +1042,7 @@ trackByBooking(
 ): string {
   return booking.id;
 }
+
+
 }
+

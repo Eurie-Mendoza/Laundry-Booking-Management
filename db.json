@@ -44,7 +44,7 @@
       "email": "",
       "address": "sfzcaas",
       "bookingDate": "2026-11-16",
-      "pickupDate": "2026-11-17",
+      "pickupDate": "2026-11-20",
       "items": [
         {
           "serviceId": 4,
@@ -63,14 +63,86 @@
       "isExpress": true,
       "expressMultiplier": 2,
       "totalAmount": 900,
-      "amountPaid": 0,
-      "balance": 900,
-      "paymentStatus": "Unpaid",
+      "amountPaid": 900,
+      "balance": 0,
+      "paymentStatus": "Paid",
       "paymentMethod": "Cash",
       "status": "Pending",
       "notes": "",
       "createdAt": "2026-11-15T16:25:28.998Z",
-      "updatedAt": "2026-11-15T16:25:28.998Z"
+      "updatedAt": "2026-11-20T10:25:49.103Z"
+    },
+    {
+      "id": "LABA-2026-413965",
+      "bookingNumber": "LABA-2026-413965",
+      "customerName": "mariabhhh",
+      "phoneNumber": "3445635636",
+      "email": "",
+      "address": "sdgsdsgsdsg",
+      "bookingDate": "2026-11-20",
+      "pickupDate": "2026-11-27",
+      "items": [
+        {
+          "serviceId": 1,
+          "itemCategoryId": 1,
+          "serviceName": "Wash & Fold",
+          "categoryName": "Tops",
+          "weight": 3,
+          "pricePerKg": 50,
+          "subtotal": 150
+        }
+      ],
+      "weightKg": 3,
+      "totalWeight": 3,
+      "servicePrice": 150,
+      "subtotal": 150,
+      "isExpress": false,
+      "expressMultiplier": 1,
+      "totalAmount": 150,
+      "amountPaid": 150,
+      "balance": 0,
+      "paymentStatus": "Paid",
+      "paymentMethod": "Cash",
+      "status": "Pending",
+      "notes": "",
+      "createdAt": "2026-11-20T11:00:13.965Z",
+      "updatedAt": "2026-11-20T11:11:20.573Z"
+    },
+    {
+      "id": "LABA-2026-961154",
+      "bookingNumber": "LABA-2026-961154",
+      "customerName": "DARW ASAF",
+      "phoneNumber": "12435657688",
+      "email": "",
+      "address": "SAFAFAFS",
+      "bookingDate": "2026-11-20",
+      "pickupDate": "2026-11-21",
+      "items": [
+        {
+          "serviceId": 1,
+          "itemCategoryId": 1,
+          "serviceName": "Wash & Fold",
+          "categoryName": "Tops",
+          "weight": 5,
+          "pricePerKg": 50,
+          "subtotal": 250
+        }
+      ],
+      "weightKg": 5,
+      "totalWeight": 5,
+      "servicePrice": 250,
+      "subtotal": 250,
+      "isExpress": true,
+      "expressMultiplier": 2,
+      "totalAmount": 500,
+      "amountPaid": 0,
+      "balance": 500,
+      "paymentStatus": "Unpaid",
+      "paymentMethod": "Cash",
+      "status": "Pending",
+      "notes": "",
+      "createdAt": "2026-11-20T11:26:01.154Z",
+      "updatedAt": "2026-11-20T11:26:01.154Z"
     }
   ]
 }

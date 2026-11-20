@@ -1,3 +1,6 @@
+@if (!isLoggedIn) {
+  <app-log-in (loginSuccess)="onLoginSuccess($event)"></app-log-in>
+} @else {
 
 <div
   class="app-layout"
@@ -22,7 +25,9 @@
           <span>L</span>
         </div>
 
-        <span class="brand-name" *ngIf="!sidebarCollapsed">
+        <span
+          class="brand-name"
+          *ngIf="!sidebarCollapsed || mobileSidebarOpen">
           L.A.B.A.
         </span>
       </div>
@@ -40,9 +45,11 @@
     <!-- Navigation -->
     <nav class="sidebar-navigation">
 
-      <p class="navigation-label" *ngIf="!sidebarCollapsed">
-        MAIN MENU
-      </p>
+        <p
+          class="navigation-label"
+          *ngIf="!sidebarCollapsed || mobileSidebarOpen">
+          MAIN MENU
+        </p>
 
       <button
         type="button"
@@ -51,7 +58,9 @@
         (click)="setActiveTab('overview')">
 
         <span class="nav-icon">⌂</span>
-        <span class="nav-text" *ngIf="!sidebarCollapsed">
+        <span
+          class="nav-text"
+          *ngIf="!sidebarCollapsed || mobileSidebarOpen">
           Overview
         </span>
       </button>
@@ -97,7 +106,9 @@
     <!-- Sidebar bottom -->
     <div class="sidebar-bottom">
 
-      <p class="navigation-label" *ngIf="!sidebarCollapsed">
+      <p
+        class="navigation-label"
+        *ngIf="!sidebarCollapsed || mobileSidebarOpen">
         PREFERENCES
       </p>
 
@@ -116,7 +127,9 @@
     </div>
 
     <!-- User information -->
-    <div class="sidebar-user" *ngIf="!sidebarCollapsed">
+    <div
+      class="sidebar-user"
+      *ngIf="!sidebarCollapsed || mobileSidebarOpen">
 
       <div class="user-avatar">AD</div>
 
@@ -126,7 +139,10 @@
       </div>
 
     </div>
-
+    <button class="logout-btn" type="button" (click)="logout()">
+      <span>⏻</span>
+      <span>Log out</span>
+    </button>
   </aside>
 
   <!-- MAIN WORKSPACE -->
@@ -169,73 +185,377 @@
 
       <ng-container [ngSwitch]="activeTab">
 
-        <!-- OVERVIEW -->
-        <section *ngSwitchCase="'overview'" class="overview-page">
+          <!-- OVERVIEW -->
+          <section *ngSwitchCase="'overview'" class="overview-page">
 
-          <div class="welcome-section">
-            <div>
-              <h2>Welcome back!</h2>
-              <p>Here's what's happening in your laundry shop.</p>
+            <!-- Welcome -->
+            <div class="welcome-section">
+              <div>
+                <h2>Welcome back!</h2>
+                <p>Here's what's happening in your laundry shop.</p>
+              </div>
+
+              <button
+                type="button"
+                class="dashboard-refresh-button"
+                (click)="loadDashboard()"
+                [disabled]="isLoadingDashboard">
+                ↻ Refresh
+              </button>
             </div>
-          </div>
 
-          <!-- Overview notification card -->
-          <section class="overview-notification-card">
-            <div>
-              <h3>Notifications</h3>
-              <p>Check important booking alerts and updates.</p>
+            <!-- Loading and error messages -->
+            <div *ngIf="isLoadingDashboard" class="dashboard-message">
+              Loading dashboard information...
             </div>
 
-            <button
-              type="button"
-              (click)="setActiveTab('notifications')">
-              View all →
-            </button>
+            <div *ngIf="dashboardError" class="dashboard-error">
+              {{ dashboardError }}
+              <button type="button" (click)="loadDashboard()">Try again</button>
+            </div>
+
+            <ng-container *ngIf="!isLoadingDashboard && !dashboardError">
+                
+              <!-- OVERVIEW METRICS -->
+            <div class="overview-metrics">
+
+              <article class="metric-card">
+                <span>Pending Bookings</span>
+                <strong>{{ pendingBookings }}</strong>
+                <small>Bookings awaiting processing</small>
+              </article>
+
+              <article class="metric-card">
+                <span>Express Priority</span>
+                <strong>{{ expressPriorityBookings }}</strong>
+                <small>Unfinished express laundry orders</small>
+              </article>
+
+              <article class="metric-card">
+                <span>In Progress</span>
+                <strong>{{ inProgressBookings }}</strong>
+                <small>Laundry orders currently being processed</small>
+              </article>
+
+              <article class="metric-card">
+                <span>Completed Today</span>
+                <strong>{{ completedToday }}</strong>
+                <small>Orders completed today</small>
+              </article>
+
+            </div>
+
+              <!-- NOTIFICATION + ESTIMATOR -->
+              <div class="overview-top-grid">
+
+                <!-- LATEST NOTIFICATION -->
+                <section class="dashboard-card notification-snapshot-card">
+
+                  <div class="dashboard-card-heading">
+                    <div>
+                      <span class="dashboard-eyebrow">LATEST UPDATE</span>
+                      <h3>Recent Notification</h3>
+                    </div>
+
+                    <span class="dashboard-heading-icon">♧</span>
+                  </div>
+
+                  <ng-container *ngIf="latestNotification; else noNotification">
+
+                    <div
+                      class="notification-snapshot-content"
+                      [class.notification-pending]="latestNotification.type === 'pending'"
+                      [class.notification-progress]="latestNotification.type === 'progress'"
+                      [class.notification-payment]="latestNotification.type === 'payment'">
+
+                      <div class="notification-snapshot-title">
+                        <span class="notification-dot"></span>
+                        <strong>{{ latestNotification.title }}</strong>
+                      </div>
+
+                      <p>{{ latestNotification.message }}</p>
+
+                      <div class="notification-snapshot-meta">
+                        <span>{{ latestNotification.bookingNumber }}</span>
+                        <span>{{ latestNotification.date }}</span>
+                      </div>
+
+                    </div>
+
+                  </ng-container>
+
+                  <ng-template #noNotification>
+                    <div class="dashboard-empty-state">
+                      <span class="empty-state-icon">✓</span>
+                      <strong>You're all caught up!</strong>
+                      <p>There are no recent booking notifications.</p>
+                    </div>
+                  </ng-template>
+
+                  <button
+                    type="button"
+                    class="dashboard-text-button"
+                    (click)="openNotifications()">
+                    View all notifications →
+                  </button>
+
+                </section>
+
+                <!-- QUICK WEIGHT AND PRICE ESTIMATOR -->
+                <section class="dashboard-card estimator-card">
+
+                  <div class="dashboard-card-heading">
+                    <div>
+                      <span class="dashboard-eyebrow">QUICK TOOL</span>
+                      <h3>Weight & Price Estimator</h3>
+                    </div>
+
+                    <span class="dashboard-heading-icon">⚖</span>
+                  </div>
+
+                  <div class="estimator-fields">
+
+                    <div class="estimator-field">
+                      <label for="estimator-service">Laundry Service</label>
+
+                      <select
+                        id="estimator-service"
+                        [value]="selectedEstimatorIndex"
+                        (change)="onEstimatorServiceChange($event)">
+
+                        <option
+                          *ngFor="let service of estimatorServices; let i = index"
+                          [value]="i">
+
+                          {{ service.name }} - {{ service.category }}
+                        </option>
+
+                      </select>
+                    </div>
+
+                    <div class="estimator-field">
+                      <label for="estimator-weight">Laundry Weight (kg)</label>
+
+                      <input
+                        id="estimator-weight"
+                        type="number"
+                        min="3"
+                        max="20"
+                        step="0.5"
+                        [value]="estimatorWeight"
+                        (input)="onEstimatorWeightChange($event)">
+                    </div>
+
+                    <label class="estimator-express-option">
+                      <input
+                        type="checkbox"
+                        [checked]="estimatorExpress"
+                        (change)="onEstimatorExpressChange($event)">
+
+                      <span>
+                        <strong>Express Service</strong>
+                        <small>Double the regular service price</small>
+                      </span>
+                    </label>
+
+                  </div>
+
+                  <div class="estimator-result">
+
+                    <div class="estimator-rate">
+                      <span>Rate per kilogram</span>
+                      <strong>
+                        {{ formatCurrency(selectedEstimatorService?.pricePerKg || 0) }}/kg
+                      </strong>
+                    </div>
+
+                    <div class="estimator-total">
+                      <div>
+                        <span>Estimated Total</span>
+                        <small *ngIf="estimatorExpress">Express rate applied (2×)</small>
+                        <small *ngIf="!estimatorExpress">Regular service rate</small>
+                      </div>
+
+                      <strong>
+                        {{ formatCurrency(estimatorTotal) }}
+                      </strong>
+                    </div>
+
+                    <p
+                      class="estimator-validation"
+                      *ngIf="!isEstimatorWeightValid">
+                      Please enter a weight between 3 kg and 20 kg.
+                    </p>
+
+                    <p class="estimator-disclaimer">
+                      Estimate only. Final charges may vary based on the actual laundry items.
+                    </p>
+
+                  </div>
+
+                </section>
+
+              </div>
+
+              <!-- PICKUP SCHEDULES -->
+              <div class="overview-schedule-grid">
+
+                <!-- TODAY'S SCHEDULE -->
+                <section class="dashboard-card schedule-card">
+
+                  <div class="dashboard-card-heading">
+                    <div>
+                      <span class="dashboard-eyebrow">PICKUP OVERVIEW</span>
+                      <h3>Today's Schedule</h3>
+                      <p class="schedule-date">{{ formatScheduleDate(todayDate) }}</p>
+                    </div>
+
+                    <span class="dashboard-heading-icon">▦</span>
+                  </div>
+
+                  <div class="schedule-count">
+                    <strong>{{ todaysSchedule.length }}</strong>
+                    <span>pickup{{ todaysSchedule.length === 1 ? '' : 's' }} today</span>
+                  </div>
+
+                  <div *ngIf="todaysSchedule.length > 0; else noTodaySchedule"
+                      class="schedule-list">
+
+                    <article
+                      class="schedule-item"
+                      *ngFor="let booking of todaysSchedule">
+
+                      <div class="schedule-item-main">
+                        <strong>{{ booking.customerName }}</strong>
+                        <span>{{ booking.bookingNumber }}</span>
+                      </div>
+
+                      <div class="schedule-item-details">
+                        <span>
+                          {{ booking.totalWeight || 0 }} kg
+                        </span>
+
+                        <span
+                          class="booking-status"
+                          [class.status-pending]="booking.status === 'Pending'"
+                          [class.status-progress]="booking.status === 'In Progress'"
+                          [class.status-done]="booking.status === 'Done'">
+
+                          {{ booking.status }}
+                        </span>
+                      </div>
+
+                    </article>
+
+                  </div>
+
+                  <ng-template #noTodaySchedule>
+                    <div class="dashboard-empty-state schedule-empty-state">
+                      <span class="empty-state-icon">▦</span>
+                      <strong>No pickups scheduled today</strong>
+                      <p>There are no bookings scheduled for pickup today.</p>
+                    </div>
+                  </ng-template>
+
+                </section>
+
+                <!-- UPCOMING SCHEDULE -->
+                <section class="dashboard-card schedule-card">
+
+                  <div class="dashboard-card-heading upcoming-heading">
+                    <div>
+                      <span class="dashboard-eyebrow">PLAN AHEAD</span>
+                      <h3>Upcoming Schedule</h3>
+                      <p class="schedule-date">Scheduled laundry pickups</p>
+                    </div>
+
+                    <span class="dashboard-heading-icon">▤</span>
+                  </div>
+
+                  <!-- Schedule filter -->
+                  <div class="schedule-filter">
+
+                    <span>Show:</span>
+
+                    <button
+                      type="button"
+                      [class.active]="scheduleFilter === '3-days'"
+                      (click)="setScheduleFilter('3-days')">
+                      Next 3 Days
+                    </button>
+
+                    <button
+                      type="button"
+                      [class.active]="scheduleFilter === '7-days'"
+                      (click)="setScheduleFilter('7-days')">
+                      Next 7 Days
+                    </button>
+
+                  </div>
+
+                  <div class="schedule-count">
+                    <strong>{{ upcomingSchedule.length }}</strong>
+                    <span>upcoming pickup{{ upcomingSchedule.length === 1 ? '' : 's' }}</span>
+                  </div>
+
+                  <div
+                    *ngIf="upcomingSchedule.length > 0; else noUpcomingSchedule"
+                    class="schedule-list">
+
+                    <article
+                      class="schedule-item upcoming-schedule-item"
+                      *ngFor="let booking of upcomingSchedule">
+
+                      <div class="schedule-date-badge">
+                        <strong>
+                          {{ booking.pickupDate | date:'dd' }}
+                        </strong>
+                        <span>
+                          {{ booking.pickupDate | date:'MMM' }}
+                        </span>
+                      </div>
+
+                      <div class="schedule-item-main">
+                        <strong>{{ booking.customerName }}</strong>
+                        <span>{{ booking.bookingNumber }}</span>
+                      </div>
+
+                      <div class="schedule-item-details">
+                        <span>
+                          {{ booking.totalWeight || 0 }} kg
+                        </span>
+
+                        <span
+                          class="booking-status"
+                          [class.status-pending]="booking.status === 'Pending'"
+                          [class.status-progress]="booking.status === 'In Progress'"
+                          [class.status-done]="booking.status === 'Done'">
+
+                          {{ booking.status }}
+                        </span>
+                      </div>
+
+                    </article>
+
+                  </div>
+
+                  <ng-template #noUpcomingSchedule>
+                    <div class="dashboard-empty-state schedule-empty-state">
+                      <span class="empty-state-icon">▦</span>
+                      <strong>No upcoming pickups</strong>
+                      <p>
+                        There are no pickups scheduled for the {{ upcomingScheduleLabel.toLowerCase() }}.
+                      </p>
+                    </div>
+                  </ng-template>
+
+                </section>
+
+              </div>
+
+            </ng-container>
+
           </section>
-
-          <!-- Overview reports and metrics -->
-          <div class="overview-metrics">
-
-            <article class="metric-card">
-              <span>Total Revenue</span>
-              <strong>₱0.00</strong>
-              <small>Based on recorded payments</small>
-            </article>
-
-            <article class="metric-card">
-              <span>Total Bookings</span>
-              <strong>0</strong>
-              <small>All recorded bookings</small>
-            </article>
-
-            <article class="metric-card">
-              <span>Pending Bookings</span>
-              <strong>0</strong>
-              <small>Awaiting processing</small>
-            </article>
-
-            <article class="metric-card">
-              <span>Completed Bookings</span>
-              <strong>0</strong>
-              <small>Finished laundry orders</small>
-            </article>
-
-          </div>
-
-          <section class="overview-report-card">
-            <div>
-              <h3>Reports Overview</h3>
-              <p>View your laundry shop's financial and booking performance.</p>
-            </div>
-
-            <button
-              type="button"
-              (click)="setActiveTab('reports')">
-              Open Reports →
-            </button>
-          </section>
-
-        </section>
 
         <!-- BOOKING MANAGEMENT -->
         <app-customer
@@ -244,7 +564,11 @@
 
         <!-- NOTIFICATIONS -->
         <app-notifications
-          *ngSwitchCase="'notifications'">
+          *ngSwitchCase="'notifications'"
+          [bookings]="bookings"
+          [isLoading]="isLoadingDashboard"
+          [errorMessage]="dashboardError"
+          (refreshRequested)="loadDashboard()">
         </app-notifications>
 
         <!-- REPORTS -->
@@ -257,7 +581,6 @@
           <h2>Shop Settings</h2>
           <p>Manage your laundry shop information, service rates, and operating rules.</p>
         </section>
-
       </ng-container>
 
     </div>
@@ -265,3 +588,6 @@
   </main>
 
 </div>
+
+
+}

@@ -1,8 +1,14 @@
 
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import {
+  Component,
+  Input,
+  Output,
+  EventEmitter,
+  OnChanges,
+  SimpleChanges
+} from '@angular/core';
 
-import { BookingService } from '../services/booking.service';
 import { CustomerBooking, BookingNotification } from '../rules';
 
 @Component({
@@ -12,46 +18,38 @@ import { CustomerBooking, BookingNotification } from '../rules';
   templateUrl: './notifications.html',
   styleUrl: './notifications.css'
 })
-export class NotificationsComponent implements OnInit {
-  private bookingService = inject(BookingService);
+export class NotificationsComponent implements OnChanges {
 
-  bookings: CustomerBooking[] = [];
+  // Receive booking data from AppComponent
+  @Input() bookings: CustomerBooking[] = [];
+  @Input() isLoading = false;
+  @Input() errorMessage = '';
+
+  // Request AppComponent to reload bookings when Refresh is clicked
+  @Output() refreshRequested = new EventEmitter<void>();
+
   notifications: BookingNotification[] = [];
 
-  isLoading = false;
-  errorMessage = '';
-
-  ngOnInit(): void {
-    this.loadNotifications();
-  }
-
-  loadNotifications(): void {
-    this.isLoading = true;
-    this.errorMessage = '';
-
-    this.bookingService.getBookings().subscribe({
-      next: (data) => {
-        this.bookings = data;
-        this.generateNotifications();
-        this.isLoading = false;
-      },
-      error: () => {
-        this.errorMessage = 'Unable to retrieve booking notifications.';
-        this.isLoading = false;
-      }
-    });
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['bookings']) {
+      this.generateNotifications();
+    }
   }
 
   private generateNotifications(): void {
     const alerts: BookingNotification[] = [];
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
     for (const booking of this.bookings) {
+
+      // Ignore cancelled bookings
       if (booking.status === 'Cancelled') {
         continue;
       }
 
+      // Pending booking notification
       if (booking.status === 'Pending') {
         alerts.push({
           id: `${booking.id}-pending`,
@@ -63,6 +61,7 @@ export class NotificationsComponent implements OnInit {
         });
       }
 
+      // In-progress booking notification
       if (booking.status === 'In Progress') {
         alerts.push({
           id: `${booking.id}-progress`,
@@ -74,6 +73,7 @@ export class NotificationsComponent implements OnInit {
         });
       }
 
+      // Completed booking notification
       if (booking.status === 'Done') {
         alerts.push({
           id: `${booking.id}-completed`,
@@ -85,6 +85,7 @@ export class NotificationsComponent implements OnInit {
         });
       }
 
+      // Express priority notification
       if (booking.isExpress && booking.status !== 'Done') {
         alerts.push({
           id: `${booking.id}-express`,
@@ -96,8 +97,10 @@ export class NotificationsComponent implements OnInit {
         });
       }
 
+      // Upcoming pickup notification
       if (booking.pickupDate) {
         const [year, month, day] = booking.pickupDate.split('-').map(Number);
+
         const pickup = new Date(year, month - 1, day);
         pickup.setHours(0, 0, 0, 0);
 
@@ -125,36 +128,14 @@ export class NotificationsComponent implements OnInit {
       }
     }
 
+    // Sort notifications by date
     this.notifications = alerts.sort(
       (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
     );
   }
 
-  get pendingCount(): number {
-    return this.notifications.filter(
-      item => item.title === 'Pending Booking'
-    ).length;
-  }
-
-  get expressCount(): number {
-    return this.notifications.filter(
-      item => item.type === 'priority'
-    ).length;
-  }
-
-  get pickupCount(): number {
-    return this.notifications.filter(
-      item => item.title.startsWith('Upcoming Pickup')
-    ).length;
-  }
-
-  get completedCount(): number {
-    return this.notifications.filter(
-      item => item.type === 'success'
-    ).length;
-  }
-
+  // Refresh using the parent component's existing booking loader
   refresh(): void {
-    this.loadNotifications();
+    this.refreshRequested.emit();
   }
 }
