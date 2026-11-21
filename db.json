@@ -143,6 +143,78 @@
       "notes": "",
       "createdAt": "2026-11-20T11:26:01.154Z",
       "updatedAt": "2026-11-20T11:26:01.154Z"
+    },
+    {
+      "id": "LABA-2026-722058",
+      "bookingNumber": "LABA-2026-722058",
+      "customerName": "buni",
+      "phoneNumber": "7676776768",
+      "email": "",
+      "address": "sfaff",
+      "bookingDate": "2026-11-23",
+      "pickupDate": "2026-11-28",
+      "items": [
+        {
+          "serviceId": 1,
+          "itemCategoryId": 1,
+          "serviceName": "Wash & Fold",
+          "categoryName": "Tops",
+          "weight": 3,
+          "pricePerKg": 50,
+          "subtotal": 150
+        }
+      ],
+      "weightKg": 3,
+      "totalWeight": 3,
+      "servicePrice": 150,
+      "subtotal": 150,
+      "isExpress": true,
+      "expressMultiplier": 2,
+      "totalAmount": 300,
+      "amountPaid": 300,
+      "balance": 0,
+      "paymentStatus": "Paid",
+      "paymentMethod": "Cash",
+      "status": "Pending",
+      "notes": "",
+      "createdAt": "2026-11-21T17:05:22.058Z",
+      "updatedAt": "2026-11-21T18:29:06.264Z"
+    },
+    {
+      "id": "LABA-2026-027023",
+      "bookingNumber": "LABA-2026-027023",
+      "customerName": "ere",
+      "phoneNumber": "98676878786868",
+      "email": "sdfsfd",
+      "address": "dsfdsf",
+      "bookingDate": "2026-11-23",
+      "pickupDate": "2026-11-30",
+      "items": [
+        {
+          "serviceId": 1,
+          "itemCategoryId": 1,
+          "serviceName": "Wash & Fold",
+          "categoryName": "Tops",
+          "weight": 20,
+          "pricePerKg": 50,
+          "subtotal": 1000
+        }
+      ],
+      "weightKg": 20,
+      "totalWeight": 20,
+      "servicePrice": 1000,
+      "subtotal": 1000,
+      "isExpress": false,
+      "expressMultiplier": 1,
+      "totalAmount": 1000,
+      "amountPaid": 213,
+      "balance": 787,
+      "paymentStatus": "Partially Paid",
+      "paymentMethod": "GCash",
+      "status": "Pending",
+      "notes": "",
+      "createdAt": "2026-11-21T18:33:47.023Z",
+      "updatedAt": "2026-11-21T18:34:43.518Z"
     }
   ]
 }

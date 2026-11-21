@@ -8,6 +8,7 @@ import {
 } from '@angular/core';
 
 import { BookingService } from '../services/booking.service';
+import { ReportsService } from '../reports';
 import { CustomerBooking } from '../rules';
 
 @Component({
@@ -20,6 +21,7 @@ import { CustomerBooking } from '../rules';
 export class ReportsComponent implements OnInit {
 
   private bookingService = inject(BookingService);
+  private reportsService = inject(ReportsService);
   private cdr = inject(ChangeDetectorRef);
 
   bookings: CustomerBooking[] = [];
@@ -38,15 +40,10 @@ export class ReportsComponent implements OnInit {
     this.cdr.detectChanges();
 
     this.bookingService.getBookings().subscribe({
-
       next: (data) => {
         this.bookings = data || [];
         this.isLoading = false;
 
-        console.log('Bookings loaded:', this.bookings);
-        console.log('Loading state:', this.isLoading);
-
-        // Explicitly update the component view
         this.cdr.detectChanges();
       },
 
@@ -60,167 +57,91 @@ export class ReportsComponent implements OnInit {
 
         this.cdr.detectChanges();
       }
-
     });
   }
 
-  // Automatically identify available services
+  // Available laundry services
   get serviceNames(): string[] {
-    const services = new Set<string>();
-
-    this.bookings.forEach(booking => {
-      if (booking.items?.length) {
-        booking.items.forEach(item => {
-          if (item.serviceName) {
-            services.add(item.serviceName);
-          }
-        });
-      } else {
-        const legacyService = (booking as any).serviceType;
-
-        if (legacyService) {
-          services.add(legacyService);
-        }
-      }
-    });
-
-    return Array.from(services).sort();
+    return this.reportsService.getServiceNames(this.bookings);
   }
 
   // Booking status count
   getStatusCount(status: string): number {
-    return this.bookings.filter(
-      booking => booking.status === status
-    ).length;
+    return this.reportsService.getStatusCount(this.bookings, status);
   }
 
   get totalBookings(): number {
-    return this.bookings.length;
+    return this.reportsService.getTotalBookings(this.bookings);
   }
 
   get activeBookings(): number {
-    return this.bookings.filter(
-      booking =>
-        booking.status === 'Pending' ||
-        booking.status === 'In Progress'
-    ).length;
+    return this.reportsService.getActiveBookings(this.bookings);
   }
 
   get completedBookings(): number {
-    return this.getStatusCount('Done');
+    return this.reportsService.getCompletedBookings(this.bookings);
   }
 
   get cancelledBookings(): number {
-    return this.getStatusCount('Cancelled');
+    return this.reportsService.getCancelledBookings(this.bookings);
   }
 
   // Total booking charges
   get totalRevenue(): number {
-    return this.bookings.reduce(
-      (total, booking) =>
-        total + Number(booking.totalAmount || 0),
-      0
-    );
+    return this.reportsService.getTotalRevenue(this.bookings);
   }
 
   // Total payments received
   get totalCollected(): number {
-    return this.bookings.reduce(
-      (total, booking) =>
-        total + Number(booking.amountPaid || 0),
-      0
-    );
+    return this.reportsService.getTotalCollected(this.bookings);
   }
 
   // Remaining balances
   get outstandingBalance(): number {
-    return this.bookings.reduce(
-      (total, booking) => {
-        const balance = Number(
-          booking.balance ??
-          (
-            Number(booking.totalAmount || 0) -
-            Number(booking.amountPaid || 0)
-          )
-        );
-
-        return total + Math.max(0, balance);
-      },
-      0
-    );
+    return this.reportsService.getOutstandingBalance(this.bookings);
   }
 
   // Total laundry weight
   get totalWeight(): number {
-    return this.bookings.reduce(
-      (total, booking) => {
-        const weight = Number(
-          booking.totalWeight ||
-          (booking as any).weightKg ||
-          0
-        );
-
-        return total + weight;
-      },
-      0
-    );
+    return this.reportsService.getTotalWeight(this.bookings);
   }
 
   // Express bookings
   get expressBookings(): number {
-    return this.bookings.filter(
-      booking => booking.isExpress === true
-    ).length;
+    return this.reportsService.getExpressBookings(this.bookings);
   }
 
   // Average booking value
   get averageBookingValue(): number {
-    return this.totalBookings
-      ? this.totalRevenue / this.totalBookings
-      : 0;
+    return this.reportsService.getAverageBookingValue(this.bookings);
   }
 
   // Count bookings containing a service
   getServiceCount(serviceName: string): number {
-    return this.bookings.filter(booking => {
-      if (booking.items?.length) {
-        return booking.items.some(
-          item => item.serviceName === serviceName
-        );
-      }
-
-      return (booking as any).serviceType === serviceName;
-    }).length;
+    return this.reportsService.getServiceCount(
+      this.bookings,
+      serviceName
+    );
   }
 
   // Service percentage
   getServicePercentage(serviceName: string): number {
-    if (!this.totalBookings) {
-      return 0;
-    }
-
-    return Math.round(
-      (this.getServiceCount(serviceName) / this.totalBookings) * 100
+    return this.reportsService.getServicePercentage(
+      this.bookings,
+      serviceName
     );
   }
 
   // Booking status percentage
   getStatusPercentage(status: string): number {
-    if (!this.totalBookings) {
-      return 0;
-    }
-
-    return Math.round(
-      (this.getStatusCount(status) / this.totalBookings) * 100
+    return this.reportsService.getStatusPercentage(
+      this.bookings,
+      status
     );
   }
 
   // Philippine Peso currency
   currency(value: number): string {
-    return new Intl.NumberFormat('en-PH', {
-      style: 'currency',
-      currency: 'PHP'
-    }).format(Number(value || 0));
+    return this.reportsService.formatCurrency(value);
   }
-
 }

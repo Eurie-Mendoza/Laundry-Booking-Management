@@ -1,3 +1,4 @@
+
 import { CommonModule } from '@angular/common';
 import {
   Component,
@@ -5,9 +6,12 @@ import {
   OnInit,
   inject,
   ChangeDetectorRef
-} from '@angular/core';import { FormsModule } from '@angular/forms';
+} from '@angular/core';
+import { FormsModule } from '@angular/forms';
 
 import { BookingService } from '../services/booking.service';
+import { CustomerService, BookingRecord, BookingFormItem } from '../customer';
+
 import {
   CustomerBooking,
   BookingItem,
@@ -18,17 +22,7 @@ import {
   ItemCategory
 } from '../rules';
 
-type BookingRecord = CustomerBooking & {
-  subtotal: number;
-  expressMultiplier: number;
-  balance: number;
-};
 
-type BookingFormItem = {
-  serviceId: number;
-  itemCategoryId: number;
-  weight: number;
-};
 
 @Component({
   selector: 'app-customer',
@@ -38,8 +32,10 @@ type BookingFormItem = {
   styleUrl: './customer.css'
 })
 export class CustomerComponent implements OnInit {
-  private bookingService = inject(BookingService);
-  private cdr = inject(ChangeDetectorRef);
+private bookingService = inject(BookingService);
+private customerService = inject(CustomerService);
+private cdr = inject(ChangeDetectorRef);
+
   @Input() initialView: 'records' | 'customers' = 'records';
 
   bookings: BookingRecord[] = [];
@@ -212,53 +208,11 @@ receiptBooking: BookingRecord | null = null;
   });
 }
 
-  private normalizeBooking(
-    booking: CustomerBooking
-  ): BookingRecord {
-    const data = booking as any;
-
-    const items = Array.isArray(data.items)
-      ? data.items
-      : [];
-
-    const totalWeight = Number(
-      data.totalWeight ?? data.weightKg ?? 0
-    );
-
-    const subtotal = Number(
-      data.subtotal ?? data.servicePrice ?? data.totalAmount ?? 0
-    );
-
-    const totalAmount = Number(data.totalAmount ?? 0);
-    const amountPaid = Number(data.amountPaid ?? 0);
-
-    const paymentStatus = this.getPaymentStatus(
-      amountPaid,
-      totalAmount
-    );
-
-    return {
-      ...booking,
-      bookingNumber: data.bookingNumber || data.id,
-      phoneNumber: data.phoneNumber || data.contactNumber || '',
-      email: data.email || '',
-      items,
-      totalWeight,
-      weightKg: Number(data.weightKg ?? totalWeight),
-      subtotal,
-      servicePrice: subtotal,
-      expressMultiplier: Number(
-        data.expressMultiplier || (data.isExpress ? 2 : 1)
-      ),
-      totalAmount,
-      amountPaid,
-      balance: Math.max(0, totalAmount - amountPaid),
-      paymentStatus,
-      status: data.status === 'In-Progress'
-        ? 'In Progress'
-        : data.status || 'Pending'
-    } as BookingRecord;
-  }
+private normalizeBooking(
+  booking: CustomerBooking
+): BookingRecord {
+  return this.customerService.normalizeBooking(booking);
+}
 
   private replaceBooking(updated: CustomerBooking): void {
     const normalized = this.normalizeBooking(updated);
@@ -452,40 +406,7 @@ receiptBooking: BookingRecord | null = null;
   validateBookingDate(
     dateValue: string
   ): { valid: boolean; message: string } {
-    if (!dateValue) {
-      return {
-        valid: false,
-        message: 'Please select a booking date.'
-      };
-    }
-
-    const selected = this.parseLocalDate(dateValue);
-
-    if (!selected) {
-      return {
-        valid: false,
-        message: 'Please select a valid booking date.'
-      };
-    }
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    if (selected < today) {
-      return {
-        valid: false,
-        message: 'Past dates cannot be booked.'
-      };
-    }
-
-    if (selected.getDay() === 0) {
-      return {
-        valid: false,
-        message: 'The shop is closed on Sundays. Please choose another day.'
-      };
-    }
-
-    return { valid: true, message: '' };
+    return this.customerService.validateBookingDate(dateValue);
   }
 
   validatePickupDate(
@@ -493,88 +414,20 @@ receiptBooking: BookingRecord | null = null;
     pickupDate: string,
     isExpress: boolean
   ): { valid: boolean; message: string } {
-    if (!bookingDate || !pickupDate) {
-      return {
-        valid: false,
-        message: 'Please select an expected pickup date.'
-      };
-    }
-
-    const booking = this.parseLocalDate(bookingDate);
-    const pickup = this.parseLocalDate(pickupDate);
-
-    if (!booking || !pickup) {
-      return {
-        valid: false,
-        message: 'Please select valid booking and pickup dates.'
-      };
-    }
-
-    if (pickup <= booking) {
-      return {
-        valid: false,
-        message: 'Pickup date must be after the booking date.'
-      };
-    }
-
-    if (!isExpress) {
-      const minimumPickup = new Date(booking);
-      minimumPickup.setDate(minimumPickup.getDate() + 7);
-
-      if (pickup < minimumPickup) {
-        return {
-          valid: false,
-          message: 'Regular bookings require at least 7 days before pickup.'
-        };
-      }
-    }
-
-    return { valid: true, message: '' };
+    return this.customerService.validatePickupDate(
+      bookingDate,
+      pickupDate,
+      isExpress
+    );
   }
 
-  private parseLocalDate(value: string): Date | null {
-    if (!value) {
-      return null;
-    }
-
-    const parts = value.split('-').map(Number);
-
-    if (parts.length !== 3 || parts.some(part => !Number.isFinite(part))) {
-      return null;
-    }
-
-    const [year, month, day] = parts;
-    const date = new Date(year, month - 1, day);
-
-    if (
-      date.getFullYear() !== year ||
-      date.getMonth() !== month - 1 ||
-      date.getDate() !== day
-    ) {
-      return null;
-    }
-
-    date.setHours(0, 0, 0, 0);
-    return date;
-  }
 
   private getNextValidDate(): string {
-    const date = new Date();
-    date.setHours(0, 0, 0, 0);
-
-    while (date.getDay() === 0) {
-      date.setDate(date.getDate() + 1);
-    }
-
-    return this.toDateString(date);
+    return this.customerService.getNextValidDate();
   }
 
   private toDateString(date: Date): string {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-
-    return `${year}-${month}-${day}`;
+    return this.customerService.toDateString(date);
   }
 
   // --------------------------------------------------
@@ -864,15 +717,7 @@ receiptBooking: BookingRecord | null = null;
     paid: number,
     total: number
   ): PaymentStatus {
-    if (paid <= 0) {
-      return 'Unpaid';
-    }
-
-    if (paid < total) {
-      return 'Partially Paid';
-    }
-
-    return 'Paid';
+    return this.customerService.getPaymentStatus(paid, total);
   }
 
   // --------------------------------------------------
@@ -880,20 +725,7 @@ receiptBooking: BookingRecord | null = null;
   // --------------------------------------------------
 
   get uniqueCustomers(): BookingRecord[] {
-    const seen = new Set<string>();
-
-    return this.bookings.filter(booking => {
-      const key = booking.phoneNumber
-        ? booking.phoneNumber.trim()
-        : booking.customerName.toLowerCase().trim();
-
-      if (seen.has(key)) {
-        return false;
-      }
-
-      seen.add(key);
-      return true;
-    });
+    return this.customerService.getUniqueCustomers(this.bookings);
   }
 
   get filteredCustomers(): BookingRecord[] {
@@ -910,22 +742,17 @@ receiptBooking: BookingRecord | null = null;
   }
 
   getCustomerBookingCount(phoneNumber: string): number {
-    return this.bookings.filter(
-      booking => booking.phoneNumber === phoneNumber
-    ).length;
+    return this.customerService.getCustomerBookingCount(
+      this.bookings,
+      phoneNumber
+    );
   }
 
   getCustomerBookings(customer: BookingRecord): BookingRecord[] {
-    return this.bookings.filter(booking => {
-      if (customer.phoneNumber) {
-        return booking.phoneNumber === customer.phoneNumber;
-      }
-
-      return (
-        booking.customerName.toLowerCase() ===
-        customer.customerName.toLowerCase()
-      );
-    });
+    return this.customerService.getCustomerBookings(
+      this.bookings,
+      customer
+    );
   }
 
   openCustomerDetails(customer: BookingRecord): void {

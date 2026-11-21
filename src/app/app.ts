@@ -2,7 +2,8 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
 import { CustomerComponent } from './customer/customer';
 import { NotificationsComponent } from './notifications/notifications';
-import { ReportsComponent } from './reports/reports';
+import { NotificationService, DashboardNotification } from './notification';import { ReportsComponent } from './reports/reports';
+import { ReportsService } from './reports';
 import { BookingService } from './services/booking.service';
 import { CustomerBooking } from './rules';
 import { LogInComponent } from './log-in/log-in';
@@ -22,14 +23,6 @@ interface EstimatorService {
   pricePerKg: number;
 }
 
-interface DashboardNotification {
-  title: string;
-  message: string;
-  bookingNumber: string;
-  date: string;
-  timestamp: number;
-  type: 'pending' | 'progress' | 'payment';
-}
 
 @Component({
   selector: 'app-root',
@@ -55,7 +48,9 @@ export class AppComponent implements OnInit {
   }
   
   
-  private bookingService = inject(BookingService);
+private bookingService = inject(BookingService);
+private reportsService = inject(ReportsService);
+private notificationService = inject(NotificationService);
 
   activeTab: NavigationTab = 'overview';
 
@@ -170,95 +165,54 @@ export class AppComponent implements OnInit {
     });
   }
 
-  // -----------------------------
-  // OVERVIEW METRICS
-  // -----------------------------
+// -----------------------------
+// OVERVIEW METRICS
+// -----------------------------
 
-  get totalRevenue(): number {
-    return this.bookings.reduce(
-      (total, booking) => total + Number(booking.totalAmount || 0),
-      0
-    );
-  }
+get totalRevenue(): number {
+  return this.reportsService.getTotalRevenue(this.bookings);
+}
 
-  get totalBookings(): number {
-    return this.bookings.length;
-  }
+get totalBookings(): number {
+  return this.reportsService.getTotalBookings(this.bookings);
+}
 
-  get pendingBookings(): number {
-  return this.bookings.filter(
-    booking => booking.status === 'Pending'
-  ).length;
-  }
+get pendingBookings(): number {
+  return this.reportsService.getPendingBookings(this.bookings);
+}
 
-  // Express bookings that are not yet finished
 get expressPriorityBookings(): number {
-  return this.bookings.filter(
-    booking =>
-      booking.isExpress &&
-      booking.status !== 'Done' &&
-      booking.status !== 'Cancelled'
-  ).length;
+  return this.reportsService.getExpressPriorityBookings(this.bookings);
 }
 
-// Laundry bookings currently being processed
 get inProgressBookings(): number {
-  return this.bookings.filter(
-    booking => booking.status === 'In Progress'
-  ).length;
+  return this.reportsService.getInProgressBookings(this.bookings);
 }
 
-  // Bookings completed today
-  get completedToday(): number {
-    const today = this.todayDate;
+get completedToday(): number {
+  return this.reportsService.getCompletedToday(
+    this.bookings,
+    this.todayDate
+  );
+}
 
-    return this.bookings.filter(booking => {
-      if (
-        booking.status !== 'Done' ||
-        !booking.completedAt
-      ) {
-        return false;
-      }
+get completedBookings(): number {
+  return this.reportsService.getCompletedBookings(this.bookings);
+}
 
-      const completedDate = new Date(booking.completedAt);
-
-      const year = completedDate.getFullYear();
-      const month = String(completedDate.getMonth() + 1).padStart(2, '0');
-      const day = String(completedDate.getDate()).padStart(2, '0');
-
-      return `${year}-${month}-${day}` === today;
-    }).length;
-  }
-
-  get completedBookings(): number {
-    return this.bookings.filter(
-      booking => booking.status === 'Done'
-    ).length;
-  }
-
-  formatCurrency(amount: number): string {
-    return new Intl.NumberFormat('en-PH', {
-      style: 'currency',
-      currency: 'PHP',
-      minimumFractionDigits: 2
-    }).format(amount);
-  }
+formatCurrency(amount: number): string {
+  return this.reportsService.formatCurrency(amount);
+}
 
   // -----------------------------
   // TODAY'S PICKUP SCHEDULE
   // -----------------------------
 
   get todaysSchedule(): CustomerBooking[] {
-    return this.bookings
-      .filter(booking =>
-        booking.pickupDate === this.todayDate &&
-        booking.status !== 'Cancelled'
-      )
-      .sort((a, b) =>
-        String(a.bookingNumber || '').localeCompare(
-          String(b.bookingNumber || '')
-        )
-      );
+    return this.reportsService.getTodaysSchedule(
+      this.bookings,
+      this.todayDate
+    );
   }
 
   // -----------------------------
@@ -270,25 +224,13 @@ get inProgressBookings(): number {
   }
 
   get upcomingSchedule(): CustomerBooking[] {
-    const today = this.dateToTimestamp(this.todayDate);
     const numberOfDays = this.scheduleFilter === '3-days' ? 3 : 7;
-    const lastDay = today + numberOfDays * 24 * 60 * 60 * 1000;
 
-    return this.bookings
-      .filter(booking => {
-        if (!booking.pickupDate || booking.status === 'Cancelled') {
-          return false;
-        }
-
-        const pickupTimestamp = this.dateToTimestamp(booking.pickupDate);
-
-        // Excludes today because today's pickups have their own section.
-        return pickupTimestamp > today && pickupTimestamp <= lastDay;
-      })
-      .sort((a, b) =>
-        this.dateToTimestamp(a.pickupDate || '') -
-        this.dateToTimestamp(b.pickupDate || '')
-      );
+    return this.reportsService.getUpcomingSchedule(
+      this.bookings,
+      numberOfDays,
+      this.todayDate
+    );
   }
 
   get upcomingScheduleLabel(): string {
@@ -302,64 +244,11 @@ get inProgressBookings(): number {
   // -----------------------------
 
   get latestNotification(): DashboardNotification | null {
-    const notifications: DashboardNotification[] = [];
-
-    this.bookings.forEach(booking => {
-      const timestamp = new Date(
-        booking.updatedAt || booking.createdAt || booking.bookingDate
-      ).getTime();
-
-      const bookingNumber = booking.bookingNumber || booking.id || 'Booking';
-
-      if (booking.status === 'Pending') {
-        notifications.push({
-          title: 'Pending Booking',
-          message: `${booking.customerName} has a booking awaiting processing.`,
-          bookingNumber,
-          date: this.formatNotificationDate(timestamp),
-          timestamp,
-          type: 'pending'
-        });
-      }
-
-      if (booking.status === 'In Progress') {
-        notifications.push({
-          title: 'Laundry In Progress',
-          message: `${booking.customerName}'s laundry is currently being processed.`,
-          bookingNumber,
-          date: this.formatNotificationDate(timestamp),
-          timestamp,
-          type: 'progress'
-        });
-      }
-
-      const balance = Number(
-        booking.balance ??
-        (Number(booking.totalAmount || 0) - Number(booking.amountPaid || 0))
-      );
-
-      if (
-        booking.status !== 'Cancelled' &&
-        balance > 0
-      ) {
-        notifications.push({
-          title: 'Payment Reminder',
-          message: `${booking.customerName} has an outstanding balance of ${this.formatCurrency(balance)}.`,
-          bookingNumber,
-          date: this.formatNotificationDate(timestamp),
-          timestamp,
-          type: 'payment'
-        });
-      }
-    });
-
-    if (notifications.length === 0) {
-      return null;
-    }
-
-    return notifications.sort(
-      (a, b) => b.timestamp - a.timestamp
-    )[0];
+    return this.notificationService.getLatestDashboardNotification(
+      this.bookings,
+      (amount) => this.formatCurrency(amount),
+      (timestamp) => this.formatNotificationDate(timestamp)
+    );
   }
 
   openNotifications(): void {
