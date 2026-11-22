@@ -1,4 +1,3 @@
-
 import { CommonModule } from '@angular/common';
 import {
   Component,
@@ -10,7 +9,12 @@ import {
 import { FormsModule } from '@angular/forms';
 
 import { BookingService } from '../services/booking.service';
-import { CustomerService, BookingRecord, BookingFormItem } from '../customer';
+
+import {
+  CustomerService,
+  BookingRecord,
+  BookingFormItem
+} from '../customer';
 
 import {
   CustomerBooking,
@@ -18,11 +22,10 @@ import {
   BookingStatus,
   PaymentMethod,
   PaymentStatus,
-  LaundryService,
-  ItemCategory
+  BOOKING_STATUS_OPTIONS,
+  PAYMENT_METHOD_OPTIONS,
+  PAYMENT_STATUS_OPTIONS
 } from '../rules';
-
-
 
 @Component({
   selector: 'app-customer',
@@ -32,38 +35,61 @@ import {
   styleUrl: './customer.css'
 })
 export class CustomerComponent implements OnInit {
-private bookingService = inject(BookingService);
-private customerService = inject(CustomerService);
-private cdr = inject(ChangeDetectorRef);
+
+  private readonly bookingService = inject(BookingService);
+  private readonly customerService = inject(CustomerService);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   @Input() initialView: 'records' | 'customers' = 'records';
+
+  readonly bookingStatusOptions = BOOKING_STATUS_OPTIONS;
+  readonly paymentMethodOptions = PAYMENT_METHOD_OPTIONS;
+  readonly paymentStatusOptions = PAYMENT_STATUS_OPTIONS;
+
+  readonly minimumWeight = this.customerService.minimumWeight;
+  readonly maximumWeight = this.customerService.maximumWeight;
+  readonly expressMultiplier = this.customerService.expressMultiplier;
+  readonly maximumCapacity = this.customerService.maximumCapacity;
+
+  readonly services = this.customerService.services;
+  readonly categories = this.customerService.categories;
 
   bookings: BookingRecord[] = [];
 
   isLoading = false;
   isSaving = false;
   isUpdatingPayment = false;
+  isCancellingBooking = false;
 
-  errorMessage = '';
-  successMessage = '';
+  isEditingBooking = false;
+  editingBookingId: string | null = null;
 
   subView: 'records' | 'customers' | 'add' = 'records';
 
   searchQuery = '';
   statusFilter = 'ALL';
 
+  errorMessage = '';
+  successMessage = '';
+
   selectedBooking: BookingRecord | null = null;
   selectedCustomer: BookingRecord | null = null;
 
-showBookingDetails = false;
-showCustomerDetails = false;
-showReceipt = false;
+  showBookingDetails = false;
+  showCustomerDetails = false;
+  showReceipt = false;
+  showCancellationForm = false;
 
-receiptBooking: BookingRecord | null = null;
+  receiptBooking: BookingRecord | null = null;
 
-  paymentDraft = {
-    amountPaid: 0,
-    paymentMethod: '' as PaymentMethod | ''
+  cancellationReason = '';
+
+  paymentDraft: {
+    paymentAmount: number;
+    paymentMethod: PaymentMethod | '';
+  } = {
+    paymentAmount: 0,
+    paymentMethod: ''
   };
 
   calendarMonth = new Date(
@@ -74,80 +100,7 @@ receiptBooking: BookingRecord | null = null;
 
   selectedDate = '';
 
-  readonly minimumWeight = 3;
-  readonly maximumWeight = 20;
-  readonly expressMultiplier = 2;
-
-  readonly services: LaundryService[] = [
-    {
-      id: 1,
-      serviceName: 'Wash & Fold',
-      description: '',
-      pricePerKg: 50,
-      isAvailable: true
-    },
-    {
-      id: 2,
-      serviceName: 'Dry Cleaning',
-      description: '',
-      pricePerKg: 120,
-      isAvailable: true
-    },
-    {
-      id: 3,
-      serviceName: 'Ironing',
-      description: '',
-      pricePerKg: 40,
-      isAvailable: true
-    },
-    {
-      id: 4,
-      serviceName: 'Comforter Wash',
-      description: '',
-      pricePerKg: 150,
-      isAvailable: true
-    }
-  ];
-
-  readonly categories: ItemCategory[] = [
-    {
-      id: 1,
-      categoryName: 'Tops',
-      description: 'Shirts, blouses, and tops',
-      isAvailable: true
-    },
-    {
-      id: 2,
-      categoryName: 'Bottoms',
-      description: 'Pants, shorts, and skirts',
-      isAvailable: true
-    },
-    {
-      id: 3,
-      categoryName: 'Bedding',
-      description: 'Bedsheets, pillowcases, and blankets',
-      isAvailable: true
-    },
-    {
-      id: 4,
-      categoryName: 'Delicates',
-      description: 'Items requiring special care',
-      isAvailable: true
-    },
-    {
-      id: 5,
-      categoryName: 'Comforters',
-      description: 'Comforters and thick blankets',
-      isAvailable: true
-    }
-  ];
-
   form = this.createEmptyForm();
-
-  ngOnInit(): void {
-    this.subView = this.initialView;
-    this.loadBookings();
-  }
 
   private createEmptyForm() {
     return {
@@ -171,48 +124,66 @@ receiptBooking: BookingRecord | null = null;
     };
   }
 
+  ngOnInit(): void {
+    this.subView = this.initialView;
+    this.loadBookings();
+  }
+
+  // --------------------------------------------------
+  // CUSTOMER VALIDATION
+  // --------------------------------------------------
+
+  get phoneError(): string {
+    return this.customerService.validatePhoneNumber(
+      this.form.phoneNumber
+    );
+  }
+
+  get emailError(): string {
+    return this.customerService.validateEmail(
+      this.form.email
+    );
+  }
+
   // --------------------------------------------------
   // BOOKING DATA
   // --------------------------------------------------
 
   loadBookings(): void {
-  this.isLoading = true;
-  this.errorMessage = '';
+    this.isLoading = true;
+    this.errorMessage = '';
 
-  this.cdr.markForCheck();
+    this.cdr.markForCheck();
 
-  this.bookingService.getBookings().subscribe({
-    next: data => {
-      this.bookings = data.map(booking =>
-        this.normalizeBooking(booking)
-      );
+    this.bookingService.getBookings().subscribe({
+      next: data => {
+        this.bookings = data.map(booking =>
+          this.normalizeBooking(booking)
+        );
 
-      this.isLoading = false;
+        this.isLoading = false;
+        this.cdr.markForCheck();
 
-      // Notify Angular that the view needs updating.
-      this.cdr.markForCheck();
+        console.log('Bookings loaded successfully:', this.bookings);
+      },
 
-      console.log('Bookings loaded successfully:', this.bookings);
-    },
+      error: error => {
+        console.error('Unable to load bookings:', error);
 
-    error: error => {
-      console.error('Unable to load bookings:', error);
+        this.errorMessage =
+          'Unable to load bookings. Make sure JSON Server is running.';
 
-      this.errorMessage =
-        'Unable to load bookings. Make sure JSON Server is running.';
+        this.isLoading = false;
+        this.cdr.markForCheck();
+      }
+    });
+  }
 
-      this.isLoading = false;
-
-      this.cdr.markForCheck();
-    }
-  });
-}
-
-private normalizeBooking(
-  booking: CustomerBooking
-): BookingRecord {
-  return this.customerService.normalizeBooking(booking);
-}
+  private normalizeBooking(
+    booking: CustomerBooking
+  ): BookingRecord {
+    return this.customerService.normalizeBooking(booking);
+  }
 
   private replaceBooking(updated: CustomerBooking): void {
     const normalized = this.normalizeBooking(updated);
@@ -227,6 +198,10 @@ private normalizeBooking(
 
     if (this.selectedCustomer?.id === normalized.id) {
       this.selectedCustomer = normalized;
+    }
+
+    if (this.receiptBooking?.id === normalized.id) {
+      this.receiptBooking = normalized;
     }
   }
 
@@ -247,48 +222,98 @@ private normalizeBooking(
   }
 
   // --------------------------------------------------
-  // BOOKING FORM
+  // BOOKING FORM CALCULATIONS
   // --------------------------------------------------
 
   get totalWeight(): number {
-    return this.form.items.reduce(
-      (total, item) => total + Number(item.weight || 0),
-      0
+    return this.customerService.getTotalWeight(
+      this.form.items
     );
   }
 
   get baseSubtotal(): number {
-    return this.form.items.reduce(
-      (total, item) =>
-        total + this.getItemSubtotal(item),
-      0
+    return this.customerService.getBaseSubtotal(
+      this.form.items
     );
   }
 
   get expressSurcharge(): number {
-    return this.form.isExpress
-      ? this.baseSubtotal * (this.expressMultiplier - 1)
-      : 0;
+    return this.customerService.getExpressSurcharge(
+      this.baseSubtotal,
+      this.form.isExpress
+    );
   }
 
   get grandTotal(): number {
-    return this.baseSubtotal *
-      (this.form.isExpress ? this.expressMultiplier : 1);
+    return this.customerService.getGrandTotal(
+      this.baseSubtotal,
+      this.form.isExpress
+    );
   }
 
   get balance(): number {
-    return Math.max(
-      0,
-      this.grandTotal - Number(this.form.amountPaid || 0)
+    return this.customerService.getBalance(
+      this.grandTotal,
+      Number(this.form.amountPaid || 0)
     );
   }
 
   get currentPaymentStatus(): PaymentStatus {
-    return this.getPaymentStatus(
+    return this.customerService.getPaymentStatus(
       Number(this.form.amountPaid || 0),
       this.grandTotal
     );
   }
+
+  // --------------------------------------------------
+  // PICKUP CAPACITY
+  // --------------------------------------------------
+
+  get selectedPickupBookingCount(): number {
+    return this.customerService.getPickupDateBookingCount(
+      this.bookings,
+      this.form.pickupDate,
+      this.isEditingBooking ? this.editingBookingId || undefined : undefined
+    );
+  }
+
+  get remainingPickupSlots(): number {
+    return this.customerService.getRemainingPickupSlots(
+      this.bookings,
+      this.form.pickupDate,
+      this.isEditingBooking ? this.editingBookingId || undefined : undefined
+    );
+  }
+
+  get pickupCapacityMessage(): string {
+    if (!this.form.pickupDate) {
+      return '';
+    }
+
+    if (this.remainingPickupSlots <= 0) {
+      return `Fully booked. This date has reached its maximum capacity of ${this.maximumCapacity} bookings.`;
+    }
+
+    return `${this.selectedPickupBookingCount} of ${this.maximumCapacity} bookings reserved. ${this.remainingPickupSlots} slot(s) remaining.`;
+  }
+
+  get pickupCapacityError(): string {
+    if (!this.form.pickupDate) {
+      return '';
+    }
+
+    const result = this.customerService.validatePickupCapacity(
+      this.bookings,
+      this.form.pickupDate,
+      this.isEditingBooking ? this.editingBookingId || undefined : undefined
+    );
+
+    return result.message;
+  }
+
+  // --------------------------------------------------
+  // BOOKING FORM VALIDATION
+  // --------------------------------------------------
 
   get weightError(): string {
     if (this.totalWeight <= 0) {
@@ -313,11 +338,17 @@ private normalizeBooking(
   }
 
   get pickupDateError(): string {
-    return this.validatePickupDate(
+    const dateValidation = this.validatePickupDate(
       this.form.bookingDate,
       this.form.pickupDate,
       this.form.isExpress
-    ).message;
+    );
+
+    if (!dateValidation.valid) {
+      return dateValidation.message;
+    }
+
+    return this.pickupCapacityError;
   }
 
   get isItemsValid(): boolean {
@@ -342,7 +373,8 @@ private normalizeBooking(
 
     return (
       this.form.customerName.trim().length >= 2 &&
-      this.form.phoneNumber.trim().length >= 7 &&
+      !this.phoneError &&
+      !this.emailError &&
       this.form.address.trim().length >= 3 &&
       this.isItemsValid &&
       this.isWeightValid &&
@@ -352,6 +384,7 @@ private normalizeBooking(
         this.form.pickupDate,
         this.form.isExpress
       ).valid &&
+      !this.pickupCapacityError &&
       Number.isFinite(paid) &&
       paid >= 0 &&
       paid <= this.grandTotal &&
@@ -365,6 +398,10 @@ private normalizeBooking(
   get isFormValidForSubmission(): boolean {
     return this.isFormValid;
   }
+
+  // --------------------------------------------------
+  // BOOKING FORM ACTIONS
+  // --------------------------------------------------
 
   addItemRow(): void {
     this.form.items.push({
@@ -382,21 +419,20 @@ private normalizeBooking(
 
   resetForm(): void {
     this.form = this.createEmptyForm();
+
+    this.isEditingBooking = false;
+    this.editingBookingId = null;
+
     this.errorMessage = '';
     this.successMessage = '';
   }
 
   getServicePrice(serviceId: number): number {
-    return Number(
-      this.services.find(
-        service => service.id === Number(serviceId)
-      )?.pricePerKg || 0
-    );
+    return this.customerService.getServicePrice(serviceId);
   }
 
   getItemSubtotal(item: BookingFormItem): number {
-    return Number(item.weight || 0) *
-      this.getServicePrice(item.serviceId);
+    return this.customerService.getItemSubtotal(item);
   }
 
   // --------------------------------------------------
@@ -421,17 +457,12 @@ private normalizeBooking(
     );
   }
 
-
   private getNextValidDate(): string {
     return this.customerService.getNextValidDate();
   }
 
-  private toDateString(date: Date): string {
-    return this.customerService.toDateString(date);
-  }
-
   // --------------------------------------------------
-  // CREATE BOOKING
+  // CREATE OR UPDATE BOOKING
   // --------------------------------------------------
 
   submitForm(): void {
@@ -439,13 +470,29 @@ private normalizeBooking(
   }
 
   submitBooking(): void {
+    if (this.isSaving) {
+      return;
+    }
+
     this.errorMessage = '';
     this.successMessage = '';
 
     if (!this.isFormValid) {
       this.errorMessage =
+        this.pickupCapacityError ||
         'Please correct the highlighted fields before submitting.';
+      return;
+    }
 
+    // Recheck capacity immediately before saving.
+    const capacityCheck = this.customerService.validatePickupCapacity(
+      this.bookings,
+      this.form.pickupDate,
+      this.isEditingBooking ? this.editingBookingId || undefined : undefined
+    );
+
+    if (!capacityCheck.valid) {
+      this.errorMessage = capacityCheck.message;
       return;
     }
 
@@ -520,63 +567,127 @@ private normalizeBooking(
       updatedAt: now
     } as CustomerBooking;
 
+    // --------------------------------------------------
+    // UPDATE EXISTING BOOKING
+    // --------------------------------------------------
+
+    if (this.isEditingBooking && this.editingBookingId) {
+      const existing = this.bookings.find(
+        entry => entry.id === this.editingBookingId
+      );
+
+      if (!existing) {
+        this.isSaving = false;
+        this.errorMessage = 'The booking could not be found.';
+        this.cdr.markForCheck();
+        return;
+      }
+
+      const updatedBooking = {
+        ...booking,
+        id: existing.id,
+        bookingNumber: existing.bookingNumber,
+        createdAt: existing.createdAt,
+        updatedAt: new Date().toISOString(),
+        status: existing.status,
+        completedAt: existing.completedAt,
+        cancellationReason: existing.cancellationReason
+      } as CustomerBooking;
+
+      this.bookingService.updateBooking(
+        existing.id,
+        updatedBooking
+      ).subscribe({
+        next: saved => {
+          this.replaceBooking(saved);
+
+          this.isSaving = false;
+          this.isEditingBooking = false;
+          this.editingBookingId = null;
+
+          this.form = this.createEmptyForm();
+          this.subView = 'records';
+
+          this.successMessage =
+            `Booking ${saved.bookingNumber} has been updated successfully.`;
+
+          this.cdr.markForCheck();
+        },
+
+        error: error => {
+          console.error('Unable to update booking:', error);
+
+          this.isSaving = false;
+          this.errorMessage =
+            'Unable to update booking. Please try again.';
+
+          this.cdr.markForCheck();
+        }
+      });
+
+      return;
+    }
+
+    // --------------------------------------------------
+    // CREATE NEW BOOKING
+    // --------------------------------------------------
+
     this.bookingService.addBooking(booking).subscribe({
       next: saved => {
-        this.bookings.unshift(
-          this.normalizeBooking(saved)
-        );
-
-        this.successMessage =
-          `Booking ${bookingNumber} has been added successfully.`;
+        this.bookings.unshift(this.normalizeBooking(saved));
 
         this.isSaving = false;
         this.form = this.createEmptyForm();
         this.subView = 'records';
+
+        this.successMessage =
+          `Booking ${saved.bookingNumber} has been added successfully.`;
+
+        this.cdr.markForCheck();
       },
-      error: () => {
-        this.errorMessage =
-          'Unable to save booking. Please check JSON Server.';
+
+      error: error => {
+        console.error('Unable to save booking:', error);
 
         this.isSaving = false;
+        this.errorMessage =
+          'Unable to save booking. Please check your connection and make sure JSON Server is running.';
+
+        this.cdr.markForCheck();
       }
     });
   }
 
   // --------------------------------------------------
-  // BOOKING RECORDS
+  // BOOKING RECORDS AND FILTERING
   // --------------------------------------------------
 
   get filteredBookings(): BookingRecord[] {
-    const query = this.searchQuery.toLowerCase().trim();
-
-    return this.bookings.filter(booking => {
-      const matchesSearch =
-        !query ||
-        booking.bookingNumber.toLowerCase().includes(query) ||
-        booking.customerName.toLowerCase().includes(query) ||
-        booking.phoneNumber.toLowerCase().includes(query);
-
-      const matchesStatus =
-        this.statusFilter === 'ALL' ||
-        booking.status === this.statusFilter;
-
-      return matchesSearch && matchesStatus;
-    });
+    return this.customerService.filterBookings(
+      this.bookings,
+      this.searchQuery,
+      this.statusFilter
+    );
   }
 
   getBookingServiceNames(booking: BookingRecord): string {
-    const names = booking.items
-      .map(item => item.serviceName)
-      .filter(Boolean);
-
-    return [...new Set(names)].join(', ') || 'Laundry Service';
+    return this.customerService.getBookingServiceNames(booking);
   }
+
+  // --------------------------------------------------
+  // BOOKING STATUS
+  // --------------------------------------------------
 
   updateStatus(
     booking: BookingRecord,
     status: BookingStatus
   ): void {
-    if (booking.status === 'Cancelled') {
+    if (
+      booking.status === 'Done' ||
+      booking.status === 'Cancelled' ||
+      status === 'Cancelled' ||
+      booking.status === status
+    ) {
       return;
     }
 
@@ -588,114 +699,11 @@ private normalizeBooking(
       updatedAt: now,
       completedAt: status === 'Done'
         ? now
-        : booking.completedAt
+        : undefined
     } as CustomerBooking;
 
-    this.bookingService.updateBooking(
-      booking.id,
-      updated
-    ).subscribe({
-      next: saved => this.replaceBooking(saved),
-      error: () => {
-        this.errorMessage =
-          'Unable to update booking status.';
-      }
-    });
-  }
-
-  deleteBooking(booking: BookingRecord): void {
-    const confirmed = window.confirm(
-      `Delete booking ${booking.bookingNumber}? This action cannot be undone.`
-    );
-
-    if (!confirmed) {
-      return;
-    }
-
-    this.bookingService.deleteBooking(booking.id).subscribe({
-      next: () => {
-        this.bookings = this.bookings.filter(
-          entry => entry.id !== booking.id
-        );
-
-        this.closeBookingDetails();
-      },
-      error: () => {
-        this.errorMessage = 'Unable to delete booking.';
-      }
-    });
-  }
-
-  // --------------------------------------------------
-  // BOOKING DETAILS AND PAYMENT UPDATE
-  // --------------------------------------------------
-
-  openBookingDetails(booking: BookingRecord): void {
-    this.selectedBooking = booking;
-
-    this.paymentDraft = {
-      amountPaid: booking.amountPaid,
-      paymentMethod: booking.paymentMethod || ''
-    };
-
-    this.showBookingDetails = true;
-  }
-
-  closeBookingDetails(): void {
-    this.showBookingDetails = false;
-    this.selectedBooking = null;
-  }
-
-  get paymentUpdateError(): string {
-    if (!this.selectedBooking) {
-      return '';
-    }
-
-    const paid = Number(this.paymentDraft.amountPaid);
-
-    if (!Number.isFinite(paid) || paid < 0) {
-      return 'Enter a valid payment amount.';
-    }
-
-    if (paid > this.selectedBooking.totalAmount) {
-      return 'Amount paid cannot exceed the total charges.';
-    }
-
-    if (paid > 0 && !this.paymentDraft.paymentMethod) {
-      return 'Please select a payment method.';
-    }
-
-    return '';
-  }
-
-  savePaymentUpdate(): void {
-    if (!this.selectedBooking) {
-      return;
-    }
-
-    if (this.paymentUpdateError) {
-      this.errorMessage = this.paymentUpdateError;
-      return;
-    }
-
-    const booking = this.selectedBooking;
-    const amountPaid = Number(this.paymentDraft.amountPaid);
-    const now = new Date().toISOString();
-
-    const updated = {
-      ...booking,
-      amountPaid,
-      balance: Math.max(0, booking.totalAmount - amountPaid),
-      paymentStatus: this.getPaymentStatus(
-        amountPaid,
-        booking.totalAmount
-      ),
-      paymentMethod: this.paymentDraft.paymentMethod,
-      updatedAt: now
-    } as CustomerBooking;
-
-    this.isUpdatingPayment = true;
     this.errorMessage = '';
+    this.successMessage = '';
 
     this.bookingService.updateBooking(
       booking.id,
@@ -703,12 +711,261 @@ private normalizeBooking(
     ).subscribe({
       next: saved => {
         this.replaceBooking(saved);
-        this.isUpdatingPayment = false;
-        this.successMessage = 'Payment information updated successfully.';
+
+        this.successMessage =
+          `Booking ${saved.bookingNumber} status changed to ${saved.status}.`;
+
+        this.cdr.markForCheck();
       },
-      error: () => {
+
+      error: error => {
+        console.error('Unable to update booking status:', error);
+
+        this.errorMessage = 'Unable to update booking status.';
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  // --------------------------------------------------
+  // BOOKING CANCELLATION
+  // --------------------------------------------------
+
+  openCancellationForm(): void {
+    if (
+      !this.selectedBooking ||
+      this.selectedBooking.status === 'Done' ||
+      this.selectedBooking.status === 'Cancelled'
+    ) {
+      this.errorMessage =
+        'Completed or cancelled bookings cannot be cancelled.';
+      return;
+    }
+
+    this.showCancellationForm = true;
+    this.cancellationReason = '';
+    this.errorMessage = '';
+    this.successMessage = '';
+  }
+
+  closeCancellationForm(): void {
+    this.showCancellationForm = false;
+    this.cancellationReason = '';
+    this.errorMessage = '';
+  }
+
+  cancelBooking(): void {
+    if (!this.selectedBooking || this.isCancellingBooking) {
+      return;
+    }
+
+    const reason = this.cancellationReason.trim();
+
+    if (reason.length < 5) {
+      this.errorMessage =
+        'Please provide a cancellation reason with at least 5 characters.';
+      return;
+    }
+
+    if (this.selectedBooking.status === 'Cancelled') {
+      this.errorMessage = 'This booking is already cancelled.';
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Are you sure you want to cancel booking ${this.selectedBooking.bookingNumber}?`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    const booking = this.selectedBooking;
+
+    const updated = {
+      ...booking,
+      status: 'Cancelled' as BookingStatus,
+      cancellationReason: reason,
+      updatedAt: new Date().toISOString()
+    } as CustomerBooking;
+
+    this.isCancellingBooking = true;
+    this.errorMessage = '';
+    this.successMessage = '';
+
+    this.bookingService.updateBooking(
+      booking.id,
+      updated
+    ).subscribe({
+      next: saved => {
+        this.replaceBooking(saved);
+
+        this.isCancellingBooking = false;
+        this.showCancellationForm = false;
+        this.cancellationReason = '';
+
+        this.successMessage =
+          `Booking ${saved.bookingNumber} has been cancelled.`;
+
+        this.cdr.markForCheck();
+      },
+
+      error: error => {
+        console.error('Unable to cancel booking:', error);
+
+        this.isCancellingBooking = false;
+        this.errorMessage =
+          'Unable to cancel booking. Please try again.';
+
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  // --------------------------------------------------
+  // BOOKING DETAILS MODAL
+  // --------------------------------------------------
+
+  openBookingDetails(booking: BookingRecord): void {
+    this.selectedBooking = booking;
+
+    this.paymentDraft = {
+      paymentAmount: 0,
+      paymentMethod: ''
+    };
+
+    this.cancellationReason = '';
+    this.showCancellationForm = false;
+
+    this.errorMessage = '';
+    this.successMessage = '';
+
+    this.showBookingDetails = true;
+  }
+
+  closeBookingDetails(): void {
+    this.showBookingDetails = false;
+    this.selectedBooking = null;
+
+    this.showCancellationForm = false;
+    this.cancellationReason = '';
+
+    this.errorMessage = '';
+    this.successMessage = '';
+  }
+
+  // --------------------------------------------------
+  // PAYMENT VALIDATION AND UPDATE
+  // --------------------------------------------------
+
+  get paymentUpdateError(): string {
+    if (!this.selectedBooking) {
+      return '';
+    }
+
+    const amount = Number(this.paymentDraft.paymentAmount);
+    const balance = Number(this.selectedBooking.balance);
+
+    if (
+      this.paymentDraft.paymentAmount === null ||
+      this.paymentDraft.paymentAmount === undefined ||
+      this.paymentDraft.paymentAmount === 0 ||
+      this.paymentDraft.paymentAmount === ('' as unknown as number)
+    ) {
+      return '';
+    }
+
+    if (!Number.isFinite(amount) || amount <= 0) {
+      return 'Enter a valid payment amount greater than zero.';
+    }
+
+    if (amount > balance) {
+      return `Payment cannot exceed the remaining balance of ${this.currency(balance)}.`;
+    }
+
+    if (!this.paymentDraft.paymentMethod) {
+      return 'Please select a payment method.';
+    }
+
+    return '';
+  }
+
+  savePaymentUpdate(): void {
+    if (!this.selectedBooking || this.isUpdatingPayment) {
+      return;
+    }
+
+    const booking = this.selectedBooking;
+    const newPayment = Number(this.paymentDraft.paymentAmount);
+    const remainingBalance = Number(booking.balance);
+
+    if (!Number.isFinite(newPayment) || newPayment <= 0) {
+      this.errorMessage = 'Enter a payment amount greater than zero.';
+      return;
+    }
+
+    if (newPayment > remainingBalance) {
+      this.errorMessage = 'Payment cannot exceed the remaining balance.';
+      return;
+    }
+
+    if (!this.paymentDraft.paymentMethod) {
+      this.errorMessage = 'Please select a payment method.';
+      return;
+    }
+
+    const updatedAmountPaid =
+      Number(booking.amountPaid) + newPayment;
+
+    const updatedBalance = this.customerService.getBalance(
+      Number(booking.totalAmount),
+      updatedAmountPaid
+    );
+
+    const updated = {
+      ...booking,
+      amountPaid: updatedAmountPaid,
+      balance: updatedBalance,
+      paymentStatus: this.getPaymentStatus(
+        updatedAmountPaid,
+        Number(booking.totalAmount)
+      ),
+      paymentMethod: this.paymentDraft.paymentMethod,
+      updatedAt: new Date().toISOString()
+    } as CustomerBooking;
+
+    this.isUpdatingPayment = true;
+    this.errorMessage = '';
+    this.successMessage = '';
+
+    this.bookingService.updateBooking(
+      booking.id,
+      updated
+    ).subscribe({
+      next: saved => {
+        this.replaceBooking(saved);
+
         this.isUpdatingPayment = false;
-        this.errorMessage = 'Unable to update payment information.';
+
+        this.paymentDraft = {
+          paymentAmount: 0,
+          paymentMethod: ''
+        };
+
+        this.successMessage =
+          `Payment of ${this.currency(newPayment)} recorded successfully.`;
+
+        this.cdr.markForCheck();
+      },
+
+      error: error => {
+        console.error('Unable to update payment:', error);
+
+        this.isUpdatingPayment = false;
+        this.errorMessage =
+          'Unable to save payment. Please try again.';
+
+        this.cdr.markForCheck();
       }
     });
   }
@@ -721,24 +978,66 @@ private normalizeBooking(
   }
 
   // --------------------------------------------------
-  // CUSTOMER LIST AND CUSTOMER HISTORY
+  // EDIT BOOKING
+  // --------------------------------------------------
+
+  editBooking(booking: BookingRecord): void {
+    if (booking.status === 'Done') {
+      this.errorMessage = 'Completed bookings cannot be edited.';
+      return;
+    }
+
+    if (booking.status === 'Cancelled') {
+      this.errorMessage = 'Cancelled bookings cannot be edited.';
+      return;
+    }
+
+    this.isEditingBooking = true;
+    this.editingBookingId = booking.id;
+
+    this.form = {
+      customerName: booking.customerName,
+      phoneNumber: booking.phoneNumber,
+      email: booking.email || '',
+      address: booking.address,
+      bookingDate: booking.bookingDate,
+      pickupDate: booking.pickupDate,
+      isExpress: booking.isExpress,
+      amountPaid: booking.amountPaid,
+      paymentMethod: booking.paymentMethod || '',
+      notes: booking.notes || '',
+      items: booking.items.map(item => ({
+        serviceId: item.serviceId,
+        itemCategoryId: item.itemCategoryId,
+        weight: item.weight
+      }))
+    };
+
+    this.errorMessage = '';
+    this.successMessage = '';
+
+    this.showBookingDetails = false;
+    this.showCancellationForm = false;
+    this.selectedBooking = null;
+
+    this.subView = 'add';
+  }
+
+  // --------------------------------------------------
+  // CUSTOMER DIRECTORY
   // --------------------------------------------------
 
   get uniqueCustomers(): BookingRecord[] {
-    return this.customerService.getUniqueCustomers(this.bookings);
+    return this.customerService.getUniqueCustomers(
+      this.bookings
+    );
   }
 
   get filteredCustomers(): BookingRecord[] {
-    const query = this.searchQuery.toLowerCase().trim();
-
-    return this.uniqueCustomers.filter(customer => {
-      return (
-        !query ||
-        customer.customerName.toLowerCase().includes(query) ||
-        customer.phoneNumber.toLowerCase().includes(query) ||
-        (customer.email || '').toLowerCase().includes(query)
-      );
-    });
+    return this.customerService.filterCustomers(
+      this.uniqueCustomers,
+      this.searchQuery
+    );
   }
 
   getCustomerBookingCount(phoneNumber: string): number {
@@ -766,7 +1065,7 @@ private normalizeBooking(
   }
 
   // --------------------------------------------------
-  // CALENDAR
+  // BOOKING CALENDAR
   // --------------------------------------------------
 
   get calendarMonthLabel(): string {
@@ -780,30 +1079,9 @@ private normalizeBooking(
     day: number;
     dateKey: string;
   }[] {
-    const year = this.calendarMonth.getFullYear();
-    const month = this.calendarMonth.getMonth();
-
-    const firstDay = new Date(year, month, 1).getDay();
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-    const cells: {
-      day: number;
-      dateKey: string;
-    }[] = [];
-
-    for (let i = 0; i < firstDay; i++) {
-      cells.push({ day: 0, dateKey: '' });
-    }
-
-    for (let day = 1; day <= daysInMonth; day++) {
-      const dateKey = this.toDateString(
-        new Date(year, month, day)
-      );
-
-      cells.push({ day, dateKey });
-    }
-
-    return cells;
+    return this.customerService.getCalendarCells(
+      this.calendarMonth
+    );
   }
 
   changeMonth(amount: number): void {
@@ -823,53 +1101,53 @@ private normalizeBooking(
       return [];
     }
 
-    return this.bookings.filter(
-      booking => booking.bookingDate === this.selectedDate
+    return this.customerService.getBookingsOnDate(
+      this.bookings,
+      this.selectedDate
     );
   }
 
   hasBookingsOnDate(dateKey: string): boolean {
-    return this.bookings.some(
-      booking => booking.bookingDate === dateKey
+    return this.customerService.hasBookingsOnDate(
+      this.bookings,
+      dateKey
     );
   }
 
-// --------------------------------------------------
-// RECEIPT AND UTILITIES
-// --------------------------------------------------
+  // --------------------------------------------------
+  // RECEIPT
+  // --------------------------------------------------
 
-openReceipt(booking: BookingRecord): void {
-  this.receiptBooking = booking;
-  this.showReceipt = true;
-}
-
-closeReceipt(): void {
-  this.showReceipt = false;
-  this.receiptBooking = null;
-}
-
-printReceipt(): void {
-  if (!this.receiptBooking) {
-    return;
+  openReceipt(booking: BookingRecord): void {
+    this.receiptBooking = booking;
+    this.showReceipt = true;
   }
 
-  window.print();
+  closeReceipt(): void {
+    this.showReceipt = false;
+    this.receiptBooking = null;
+  }
+
+  printReceipt(): void {
+    if (!this.receiptBooking) {
+      return;
+    }
+
+    window.print();
+  }
+
+  // --------------------------------------------------
+  // GENERAL UTILITIES
+  // --------------------------------------------------
+
+  currency(value: number): string {
+    return this.customerService.formatCurrency(value);
+  }
+
+  trackByBooking(
+    _index: number,
+    booking: BookingRecord
+  ): string {
+    return booking.id;
+  }
 }
-
-currency(value: number): string {
-  return new Intl.NumberFormat('en-PH', {
-    style: 'currency',
-    currency: 'PHP'
-  }).format(Number(value || 0));
-}
-
-trackByBooking(
-  _index: number,
-  booking: BookingRecord
-): string {
-  return booking.id;
-}
-
-
-}
-

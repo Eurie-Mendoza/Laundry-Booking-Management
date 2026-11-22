@@ -517,7 +517,7 @@
 }
 
 /* =========================================
-   BOOKING FORM - GENERAL LAYOUT
+   BOOKING FORM LAYOUT
 ========================================= */
 
 .four-card-grid {
@@ -539,10 +539,6 @@
   border-bottom: 1px solid #e2e8f0;
 }
 
-/* =========================================
-   ADD BOOKING FORM - GRID LAYOUT
-========================================= */
-
 .booking-form-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -551,25 +547,21 @@
   align-items: stretch;
 }
 
-/* Customer Details - Top Left */
 .booking-form-grid .details-card {
   grid-column: 1;
   grid-row: 1;
 }
 
-/* Laundry Service - Right Side */
 .booking-form-grid .service-card {
   grid-column: 2;
   grid-row: 1 / span 2;
 }
 
-/* Booking Parameters - Bottom Left */
 .booking-form-grid .parameter-card {
   grid-column: 1;
   grid-row: 2;
 }
 
-/* Summary and Payment - Full Width Bottom */
 .booking-form-grid .summary-payment-card {
   grid-column: 1 / -1;
   grid-row: 3;
@@ -776,8 +768,6 @@ textarea.input-field {
   line-height: 1.5;
 }
 
-/* Express Toggle */
-
 .switch {
   position: relative;
   display: inline-block;
@@ -897,7 +887,9 @@ textarea.input-field {
   border-top: 1px solid #e2e8f0;
 }
 
-/* Summary and Payment Layout */
+.booking-form-actions {
+  grid-column: 1 / -1;
+}
 
 .summary-payment-card .payment-fields {
   display: grid;
@@ -991,13 +983,190 @@ textarea.input-field {
   margin-top: 12px;
 }
 
-.details-modal > .form-actions {
-  flex-direction: row;
-  justify-content: flex-end;
-}
-
 .details-modal .data-table {
   min-width: 550px;
+}
+
+/* =========================================
+   BOOKING DETAILS MODAL HEADER
+========================================= */
+
+.booking-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.modal-header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.modal-header-actions .remove-row-btn {
+  width: 34px;
+  height: 36px;
+  font-size: 21px;
+}
+
+/* =========================================
+   BOOKING STATUS AND CANCELLATION
+========================================= */
+
+/* =========================================
+   BOOKING STATUS AND CANCELLATION
+========================================= */
+
+.booking-status-actions {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  margin: 14px 0;
+}
+
+.status-field {
+  flex: 1;
+  min-width: 0;
+  margin-bottom: 0;
+}
+
+.cancel-action {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+/* Cancel Booking Button - Matches Remove (×) Button */
+.btn.btn-cancel-booking {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+
+  width: 140px;
+  height: 36px;
+  min-height: 36px;
+  flex-shrink: 0;
+
+  padding: 0 12px;
+  border: 1px solid #fecdd3;
+  border-radius: 7px;
+
+  background: #fff1f2;
+  color: #be123c;
+
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+
+  cursor: pointer;
+  transition: background .2s ease, border-color .2s ease;
+}
+
+.btn.btn-cancel-booking:hover:not(:disabled) {
+  background: #ffe4e6;
+  border-color: #fecdd3;
+}
+
+.btn.btn-cancel-booking:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+.cancelled-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 40px;
+  padding: 10px;
+  border-radius: 8px;
+  background: #fee2e2;
+  color: #b42318;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.completed-label {
+  display: inline-block;
+  padding: 7px 12px;
+  border-radius: 6px;
+  background: #e8f5e9;
+  color: #2e7d32;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.cancellation-form {
+  margin-top: 16px;
+  padding: 16px;
+  border: 1px solid #e4ecef;
+  border-radius: 10px;
+  background: #f5f9fa;
+}
+
+.cancellation-form h5 {
+  margin: 0 0 6px;
+  color: #173b46;
+  font-family: 'Poppins', sans-serif;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.cancellation-form .field-box {
+  margin-top: 14px;
+}
+
+.cancellation-actions {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  margin-top: 14px;
+  padding-top: 12px;
+}
+
+.cancellation-record {
+  margin: 12px 0;
+  padding: 12px;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  background: #fff1f0;
+  color: #b42318;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.cancellation-record p {
+  margin: 6px 0 0;
+  color: #7f1d1d;
+}
+
+/* =========================================
+   MODAL FOOTER AND FEEDBACK
+========================================= */
+
+.details-modal > .modal-footer-actions {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.modal-feedback {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.modal-feedback .error-banner,
+.modal-feedback .success-banner {
+  margin: 0;
 }
 
 /* =========================================
@@ -1148,7 +1317,6 @@ textarea.input-field {
     gap: 15px;
   }
 
-  /* Keep header buttons aligned to the right */
   .page-header-row {
     justify-content: flex-end;
     align-items: center;
@@ -1165,7 +1333,6 @@ textarea.input-field {
     flex: 0 0 auto;
   }
 
-  /* Stack booking form cards */
   .booking-form-grid {
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: auto;
@@ -1235,8 +1402,40 @@ textarea.input-field {
     padding: 17px;
   }
 
-  .details-modal > .form-actions {
+  .details-modal > .form-actions,
+  .details-modal > .modal-footer-actions {
     flex-direction: column;
+  }
+
+  .booking-modal-header {
+    align-items: flex-start;
+  }
+
+  .modal-header-actions {
+    gap: 6px;
+  }
+
+  .modal-header-actions .btn {
+    padding: 8px 10px;
+    font-size: 10px;
+  }
+
+  .booking-status-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .status-field,
+  .cancel-action {
+    width: 100%;
+  }
+
+  .cancellation-actions {
+    flex-direction: column;
+  }
+
+  .cancellation-actions .btn {
+    width: 100%;
   }
 
   .receipt-modal {
@@ -1283,6 +1482,25 @@ textarea.input-field {
   .modal-overlay {
     padding: 8px;
   }
+
+  .booking-modal-header {
+    gap: 8px;
+  }
+
+  .modal-header-actions {
+    gap: 5px;
+  }
+
+  .modal-header-actions .btn {
+    min-height: 34px;
+    padding: 7px 8px;
+    font-size: 9px;
+  }
+
+  .modal-header-actions .remove-row-btn {
+    width: 30px;
+    height: 34px;
+  }
 }
 
 /* =========================================
@@ -1324,3 +1542,4 @@ textarea.input-field {
     display: none !important;
   }
 }
+

@@ -7,8 +7,12 @@
       <p>Booking activity and reminders that may need attention.</p>
     </div>
 
-    <button class="refresh-button" (click)="refresh()">
-      ↻ Refresh
+    <button
+      class="refresh-button"
+      type="button"
+      [disabled]="isLoading"
+      (click)="refresh()">
+      {{ isLoading ? '↻ Refreshing...' : '↻ Refresh' }}
     </button>
   </div>
 

@@ -1,6 +1,15 @@
-
 import { Injectable } from '@angular/core';
 import { CustomerBooking } from './rules';
+
+export interface PickupCapacityReport {
+  date: string;
+  dayName: string;
+  booked: number;
+  capacity: number;
+  remaining: number;
+  percentage: number;
+  status: 'Available' | 'Limited' | 'Fully Booked';
+}
 
 @Injectable({
   providedIn: 'root'
@@ -137,6 +146,79 @@ export class ReportsService {
         this.dateToTimestamp(a.pickupDate || '') -
         this.dateToTimestamp(b.pickupDate || '')
       );
+  }
+
+  // -----------------------------
+  // WEEKLY PICKUP CAPACITY REPORT
+  // -----------------------------
+
+  getWeeklyPickupCapacityReport(
+    bookings: CustomerBooking[],
+    maximumCapacity: number,
+    startDate: Date = new Date()
+  ): PickupCapacityReport[] {
+
+    const report: PickupCapacityReport[] = [];
+
+    const firstDate = new Date(
+      startDate.getFullYear(),
+      startDate.getMonth(),
+      startDate.getDate()
+    );
+
+    for (let index = 0; index < 7; index++) {
+      const currentDate = new Date(firstDate);
+      currentDate.setDate(firstDate.getDate() + index);
+
+      const dateKey = this.toDateString(currentDate);
+
+      const booked = bookings.filter(booking =>
+        booking.pickupDate === dateKey &&
+        booking.status !== 'Cancelled'
+      ).length;
+
+      const remaining = Math.max(
+        0,
+        maximumCapacity - booked
+      );
+
+      const percentage = maximumCapacity > 0
+        ? Math.min(
+            100,
+            Math.round((booked / maximumCapacity) * 100)
+          )
+        : 0;
+
+      let status: PickupCapacityReport['status'] = 'Available';
+
+      if (remaining === 0) {
+        status = 'Fully Booked';
+      } else if (percentage >= 75) {
+        status = 'Limited';
+      }
+
+      report.push({
+        date: dateKey,
+        dayName: currentDate.toLocaleDateString('en-PH', {
+          weekday: 'long'
+        }),
+        booked,
+        capacity: maximumCapacity,
+        remaining,
+        percentage,
+        status
+      });
+    }
+
+    return report;
+  }
+
+  private toDateString(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+
+    return `${year}-${month}-${day}`;
   }
 
   // -----------------------------

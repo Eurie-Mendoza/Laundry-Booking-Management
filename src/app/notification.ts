@@ -107,7 +107,7 @@ export class NotificationService {
     }
 
     return alerts.sort(
-      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+      (a, b) => new Date(a.date).getTime() - new Date(a.date).getTime()
     );
   }
 

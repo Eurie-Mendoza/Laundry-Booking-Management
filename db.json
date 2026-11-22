@@ -29,12 +29,13 @@
       "balance": 0,
       "paymentStatus": "Paid",
       "paymentMethod": "Cash",
-      "status": "Pending",
+      "status": "Done",
       "notes": "",
       "createdAt": "2026-11-15T10:57:47.158Z",
-      "updatedAt": "2026-11-15T15:09:56.603Z",
+      "updatedAt": "2026-11-22T15:34:50.259Z",
       "weightKg": 3,
-      "servicePrice": 360
+      "servicePrice": 360,
+      "completedAt": "2026-11-22T15:34:50.259Z"
     },
     {
       "id": "LABA-2026-928998",
@@ -139,10 +140,10 @@
       "balance": 500,
       "paymentStatus": "Unpaid",
       "paymentMethod": "Cash",
-      "status": "Pending",
+      "status": "In Progress",
       "notes": "",
       "createdAt": "2026-11-20T11:26:01.154Z",
-      "updatedAt": "2026-11-20T11:26:01.154Z"
+      "updatedAt": "2026-11-22T16:49:09.886Z"
     },
     {
       "id": "LABA-2026-722058",
@@ -175,10 +176,10 @@
       "balance": 0,
       "paymentStatus": "Paid",
       "paymentMethod": "Cash",
-      "status": "Pending",
+      "status": "In Progress",
       "notes": "",
       "createdAt": "2026-11-21T17:05:22.058Z",
-      "updatedAt": "2026-11-21T18:29:06.264Z"
+      "updatedAt": "2026-11-22T17:11:29.314Z"
     },
     {
       "id": "LABA-2026-027023",
@@ -211,10 +212,57 @@
       "balance": 787,
       "paymentStatus": "Partially Paid",
       "paymentMethod": "GCash",
-      "status": "Pending",
+      "status": "Done",
       "notes": "",
       "createdAt": "2026-11-21T18:33:47.023Z",
-      "updatedAt": "2026-11-21T18:34:43.518Z"
+      "updatedAt": "2026-11-22T16:48:51.782Z",
+      "completedAt": "2026-11-22T16:48:51.782Z"
+    },
+    {
+      "id": "LABA-2026-239220",
+      "bookingNumber": "LABA-2026-239220",
+      "customerName": "jane",
+      "phoneNumber": "09123456678",
+      "email": "eurietheone@yahoo.com",
+      "address": "hahahaa",
+      "bookingDate": "2026-11-23",
+      "pickupDate": "2026-11-26",
+      "items": [
+        {
+          "serviceId": 1,
+          "itemCategoryId": 1,
+          "serviceName": "Wash & Fold",
+          "categoryName": "Tops",
+          "weight": 14,
+          "pricePerKg": 50,
+          "subtotal": 700
+        },
+        {
+          "serviceId": 3,
+          "itemCategoryId": 1,
+          "serviceName": "Ironing",
+          "categoryName": "Tops",
+          "weight": 6,
+          "pricePerKg": 40,
+          "subtotal": 240
+        }
+      ],
+      "weightKg": 20,
+      "totalWeight": 20,
+      "servicePrice": 940,
+      "subtotal": 940,
+      "isExpress": true,
+      "expressMultiplier": 2,
+      "totalAmount": 1880,
+      "amountPaid": 0,
+      "balance": 1880,
+      "paymentStatus": "Unpaid",
+      "paymentMethod": "",
+      "status": "Cancelled",
+      "notes": "",
+      "createdAt": "2026-11-22T15:10:39.220Z",
+      "updatedAt": "2026-11-22T15:37:47.016Z",
+      "cancellationReason": "ewawn"
     }
   ]
 }

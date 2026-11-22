@@ -15,7 +15,32 @@ export type PaymentMethod =
   | 'GCash'
   | 'Bank Transfer'
   | 'Maya'
+  | 'paymaya'
   | 'Other';
+
+  export const BOOKING_STATUS_OPTIONS: BookingStatus[] = [
+  'Pending',
+  'In Progress',
+  'Done',
+  'Cancelled'
+];
+
+export const PAYMENT_STATUS_OPTIONS: PaymentStatus[] = [
+  'Unpaid',
+  'Partially Paid',
+  'Paid'
+];
+
+export const PAYMENT_METHOD_OPTIONS: PaymentMethod[] = [
+  'Cash',
+  'GCash',
+  'Bank Transfer',
+  'Maya',
+  'paymaya',
+  'Other'
+];
+
+export const DEFAULT_DAILY_BOOKING_CAPACITY = 20;
 
 export interface Account {
   id: number;
@@ -60,7 +85,9 @@ export interface CustomerBooking {
   paymentMethod: PaymentMethod;
 
   status: BookingStatus;
+  cancellationReason?: string;
   notes: string;
+  
 
   createdAt: string;
   updatedAt?: string;
@@ -92,6 +119,7 @@ export interface ShopInformation {
 export interface ShopRules {
   minimumWeight: number;
   maximumWeight: number;
+  maximumcapacity: number;
   expressEnabled: boolean;
   expressMultiplier: number;
   openingTime: string;
@@ -101,6 +129,7 @@ export interface ShopRules {
   allowSameDayBooking: boolean;
   allowCancellation: boolean;
   preventPastBookings: boolean;
+
 }
 
 export interface LABAData {

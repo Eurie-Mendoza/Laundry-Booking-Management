@@ -1,4 +1,3 @@
-
 import { CommonModule } from '@angular/common';
 import {
   Component,
@@ -8,8 +7,12 @@ import {
 } from '@angular/core';
 
 import { BookingService } from '../services/booking.service';
-import { ReportsService } from '../reports';
+import {
+  ReportsService,
+  PickupCapacityReport
+} from '../reports';
 import { CustomerBooking } from '../rules';
+import { CustomerService } from '../customer';
 
 @Component({
   selector: 'app-reports',
@@ -22,17 +25,24 @@ export class ReportsComponent implements OnInit {
 
   private bookingService = inject(BookingService);
   private reportsService = inject(ReportsService);
+  private customerService = inject(CustomerService);
   private cdr = inject(ChangeDetectorRef);
 
   bookings: CustomerBooking[] = [];
+
   isLoading = false;
   errorMessage = '';
+
+  readonly maximumCapacity = this.customerService.maximumCapacity;
 
   ngOnInit(): void {
     this.loadReports();
   }
 
-  // Load booking records from JSON Server
+  // --------------------------------------------------
+  // LOAD REPORT DATA
+  // --------------------------------------------------
+
   loadReports(): void {
     this.isLoading = true;
     this.errorMessage = '';
@@ -40,14 +50,14 @@ export class ReportsComponent implements OnInit {
     this.cdr.detectChanges();
 
     this.bookingService.getBookings().subscribe({
-      next: (data) => {
+      next: data => {
         this.bookings = data || [];
         this.isLoading = false;
 
         this.cdr.detectChanges();
       },
 
-      error: (error) => {
+      error: error => {
         console.error('Reports loading error:', error);
 
         this.errorMessage =
@@ -60,12 +70,56 @@ export class ReportsComponent implements OnInit {
     });
   }
 
-  // Available laundry services
+  // --------------------------------------------------
+  // WEEKLY PICKUP CAPACITY REPORT
+  // --------------------------------------------------
+
+  get weeklyCapacityReport(): PickupCapacityReport[] {
+    return this.reportsService.getWeeklyPickupCapacityReport(
+      this.bookings,
+      this.maximumCapacity
+    );
+  }
+
+  get weeklyTotalCapacity(): number {
+    return this.weeklyCapacityReport.reduce(
+      (total, day) => total + day.capacity,
+      0
+    );
+  }
+
+  get weeklyBookedSlots(): number {
+    return this.weeklyCapacityReport.reduce(
+      (total, day) => total + day.booked,
+      0
+    );
+  }
+
+  get weeklyRemainingSlots(): number {
+    return this.weeklyCapacityReport.reduce(
+      (total, day) => total + day.remaining,
+      0
+    );
+  }
+
+  get weeklyCapacityPercentage(): number {
+    if (this.weeklyTotalCapacity === 0) {
+      return 0;
+    }
+
+    return Math.round(
+      (this.weeklyBookedSlots / this.weeklyTotalCapacity) * 100
+    );
+  }
+
+  // --------------------------------------------------
+  // EXISTING REPORT CALCULATIONS
+  // --------------------------------------------------
+
   get serviceNames(): string[] {
     return this.reportsService.getServiceNames(this.bookings);
   }
 
-  // Booking status count
   getStatusCount(status: string): number {
     return this.reportsService.getStatusCount(this.bookings, status);
   }
@@ -86,37 +140,30 @@ export class ReportsComponent implements OnInit {
     return this.reportsService.getCancelledBookings(this.bookings);
   }
 
-  // Total booking charges
   get totalRevenue(): number {
     return this.reportsService.getTotalRevenue(this.bookings);
   }
 
-  // Total payments received
   get totalCollected(): number {
     return this.reportsService.getTotalCollected(this.bookings);
   }
 
-  // Remaining balances
   get outstandingBalance(): number {
     return this.reportsService.getOutstandingBalance(this.bookings);
   }
 
-  // Total laundry weight
   get totalWeight(): number {
     return this.reportsService.getTotalWeight(this.bookings);
   }
 
-  // Express bookings
   get expressBookings(): number {
     return this.reportsService.getExpressBookings(this.bookings);
   }
 
-  // Average booking value
   get averageBookingValue(): number {
     return this.reportsService.getAverageBookingValue(this.bookings);
   }
 
-  // Count bookings containing a service
   getServiceCount(serviceName: string): number {
     return this.reportsService.getServiceCount(
       this.bookings,
@@ -124,7 +171,6 @@ export class ReportsComponent implements OnInit {
     );
   }
 
-  // Service percentage
   getServicePercentage(serviceName: string): number {
     return this.reportsService.getServicePercentage(
       this.bookings,
@@ -132,7 +178,6 @@ export class ReportsComponent implements OnInit {
     );
   }
 
-  // Booking status percentage
   getStatusPercentage(status: string): number {
     return this.reportsService.getStatusPercentage(
       this.bookings,
@@ -140,7 +185,6 @@ export class ReportsComponent implements OnInit {
     );
   }
 
-  // Philippine Peso currency
   currency(value: number): string {
     return this.reportsService.formatCurrency(value);
   }

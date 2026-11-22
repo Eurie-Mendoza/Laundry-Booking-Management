@@ -1,4 +1,3 @@
-
 <div class="reports-container">
 
   <div class="reports-heading">
@@ -30,6 +29,69 @@
     </div>
 
   } @else {
+
+
+  <!-- WEEKLY PICKUP CAPACITY REPORT -->
+  <section class="report-panel weekly-capacity-panel">
+
+    <div class="capacity-header">
+      <div>
+        <h3>Weekly Capacity</h3>
+        <span>Booking capacity for the next seven days</span>
+      </div>
+
+      <span class="capacity-badge">
+        {{ weeklyRemainingSlots }} slots left
+      </span>
+    </div>
+
+    <div class="capacity-overview">
+      <div class="capacity-total">
+        <strong>{{ weeklyBookedSlots }}</strong>
+        <span>/ {{ weeklyTotalCapacity }} bookings</span>
+      </div>
+
+      <span class="capacity-percentage">
+        {{ weeklyCapacityPercentage }}% used
+      </span>
+    </div>
+
+    <div class="capacity-progress-track">
+      <div
+        class="capacity-progress-fill"
+        [style.width.%]="weeklyCapacityPercentage">
+      </div>
+    </div>
+
+    <div class="weekly-capacity-days">
+
+      @for (day of weeklyCapacityReport; track day.date) {
+
+        <div class="capacity-day">
+
+          <div class="capacity-day-bar-wrapper">
+            <div
+              class="capacity-day-bar"
+              [style.height.%]="day.percentage">
+            </div>
+          </div>
+
+          <strong>{{ day.booked }}</strong>
+          <span>{{ day.dayName }}</span>
+
+        </div>
+
+      }
+
+    </div>
+
+    <p class="capacity-report-note">
+      Cancelled bookings are excluded. Maximum daily capacity:
+      {{ maximumCapacity }} bookings.
+    </p>
+
+  </section>
+
 
     @if (bookings.length === 0) {
 

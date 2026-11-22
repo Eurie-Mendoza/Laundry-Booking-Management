@@ -4,49 +4,33 @@
   <div class="page-header-row">
     @if (subView === 'records') {
       <div class="header-actions">
-        <button
-          type="button"
-          (click)="switchSubView('add')"
-          class="btn btn-primary">
+        <button type="button" (click)="switchSubView('add')" class="btn btn-primary">
           ＋ Add Booking
         </button>
 
-        <button
-          type="button"
-          (click)="switchSubView('customers')"
-          class="btn btn-secondary">
+        <button type="button" (click)="switchSubView('customers')" class="btn btn-secondary">
           Customers
         </button>
       </div>
     }
 
     @if (subView === 'add' || subView === 'customers') {
-      <button
-        type="button"
-        (click)="switchSubView('records')"
-        class="btn btn-dark">
+      <button type="button" (click)="switchSubView('records')" class="btn btn-dark">
         ← Back to Bookings
       </button>
     }
   </div>
 
-  <!-- ALERTS -->
-  @if (errorMessage) {
-    <div class="error-banner">
-      {{ errorMessage }}
-    </div>
+  <!-- PAGE ALERTS: HIDDEN WHILE BOOKING DETAILS MODAL IS OPEN -->
+  @if (errorMessage && !showBookingDetails) {
+    <div class="error-banner">{{ errorMessage }}</div>
   }
 
-  @if (successMessage) {
-    <div class="success-banner">
-      {{ successMessage }}
-    </div>
+  @if (successMessage && !showBookingDetails) {
+    <div class="success-banner">{{ successMessage }}</div>
   }
 
-  <!-- ============================================ -->
   <!-- BOOKING RECORDS -->
-  <!-- ============================================ -->
-
   @if (subView === 'records') {
     <div class="records-stack">
 
@@ -62,23 +46,9 @@
           </div>
 
           <div class="calendar-controls">
-            <button
-              type="button"
-              class="calendar-nav"
-              (click)="changeMonth(-1)">
-              ‹
-            </button>
-
-            <strong class="month-label">
-              {{ calendarMonthLabel }}
-            </strong>
-
-            <button
-              type="button"
-              class="calendar-nav"
-              (click)="changeMonth(1)">
-              ›
-            </button>
+            <button type="button" class="calendar-nav" (click)="changeMonth(-1)">‹</button>
+            <strong class="month-label">{{ calendarMonthLabel }}</strong>
+            <button type="button" class="calendar-nav" (click)="changeMonth(1)">›</button>
           </div>
         </div>
 
@@ -126,10 +96,7 @@
                     <p>{{ booking.bookingNumber }}</p>
                   </div>
 
-                  <button
-                    type="button"
-                    class="link-btn"
-                    (click)="openBookingDetails(booking)">
+                  <button type="button" class="link-btn" (click)="openBookingDetails(booking)">
                     View
                   </button>
                 </div>
@@ -160,23 +127,18 @@
               placeholder="Search customer or booking ID..."
               class="search-input">
 
-            <select
-              [(ngModel)]="statusFilter"
-              class="filter-select">
-
+            <select [(ngModel)]="statusFilter" class="filter-select">
               <option value="ALL">All Statuses</option>
-              <option value="Pending">Pending</option>
-              <option value="In Progress">In Progress</option>
-              <option value="Done">Done</option>
-              <option value="Cancelled">Cancelled</option>
+
+              @for (status of bookingStatusOptions; track status) {
+                <option [value]="status">{{ status }}</option>
+              }
             </select>
           </div>
         </div>
 
         @if (isLoading) {
-          <div class="empty-table-cell">
-            Loading bookings...
-          </div>
+          <div class="empty-table-cell">Loading bookings...</div>
         } @else {
           <div class="table-responsive">
             <table class="data-table">
@@ -205,16 +167,11 @@
                     <td>{{ getBookingServiceNames(booking) }}</td>
                     <td>{{ booking.totalWeight }} kg</td>
                     <td>{{ booking.bookingDate }}</td>
-                    <td>
-                      {{ booking.isExpress ? 'Express' : 'Regular' }}
-                    </td>
+                    <td>{{ booking.isExpress ? 'Express' : 'Regular' }}</td>
                     <td>{{ currency(booking.totalAmount) }}</td>
                     <td>{{ booking.status }}</td>
                     <td>
-                      <button
-                        type="button"
-                        class="link-btn"
-                        (click)="openBookingDetails(booking)">
+                      <button type="button" class="link-btn" (click)="openBookingDetails(booking)">
                         View
                       </button>
                     </td>
@@ -223,11 +180,7 @@
                   <tr>
                     <td colspan="9" class="empty-table-cell">
                       <p>No laundry bookings found.</p>
-
-                      <button
-                        type="button"
-                        class="link-btn mt-4"
-                        (click)="switchSubView('add')">
+                      <button type="button" class="link-btn mt-4" (click)="switchSubView('add')">
                         + Create a new booking
                       </button>
                     </td>
@@ -241,10 +194,7 @@
     </div>
   }
 
-  <!-- ============================================ -->
   <!-- CUSTOMERS -->
-  <!-- ============================================ -->
-
   @if (subView === 'customers') {
     <div class="card table-card">
       <div class="table-toolbar">
@@ -284,23 +234,16 @@
                 <td>{{ customer.phoneNumber }}</td>
                 <td>{{ customer.email || '—' }}</td>
                 <td>{{ customer.address }}</td>
+                <td>{{ getCustomerBookingCount(customer.phoneNumber) }}</td>
                 <td>
-                  {{ getCustomerBookingCount(customer.phoneNumber) }}
-                </td>
-                <td>
-                  <button
-                    type="button"
-                    class="link-btn"
-                    (click)="openCustomerDetails(customer)">
+                  <button type="button" class="link-btn" (click)="openCustomerDetails(customer)">
                     View
                   </button>
                 </td>
               </tr>
             } @empty {
               <tr>
-                <td colspan="6" class="empty-table-cell">
-                  No customers found.
-                </td>
+                <td colspan="6" class="empty-table-cell">No customers found.</td>
               </tr>
             }
           </tbody>
@@ -309,10 +252,7 @@
     </div>
   }
 
-  <!-- ============================================ -->
-  <!-- ADD BOOKING FORM -->
-  <!-- ============================================ -->
-
+  <!-- ADD / UPDATE BOOKING FORM -->
   @if (subView === 'add') {
     <form (ngSubmit)="submitForm()" novalidate>
       <div class="booking-form-grid">
@@ -320,7 +260,9 @@
         <!-- CUSTOMER DETAILS -->
         <div class="card form-card details-card">
           <div class="card-header-line">
-            <h4 class="card-heading">Customer Details</h4>
+            <h4 class="card-heading">
+              {{ isEditingBooking ? 'Update Booking' : 'Customer Details' }}
+            </h4>
           </div>
 
           <div class="field-box">
@@ -341,6 +283,10 @@
               [(ngModel)]="form.phoneNumber"
               placeholder="e.g., 0917 123 4567"
               class="input-field">
+
+            @if (phoneError) {
+              <div class="error-banner">{{ phoneError }}</div>
+            }
           </div>
 
           <div class="field-box">
@@ -350,8 +296,7 @@
               [(ngModel)]="form.address"
               rows="2"
               placeholder="Street, Barangay, City"
-              class="input-field">
-            </textarea>
+              class="input-field"></textarea>
           </div>
 
           <div class="field-box">
@@ -362,6 +307,10 @@
               [(ngModel)]="form.email"
               placeholder="customer@email.com"
               class="input-field">
+
+            @if (emailError) {
+              <div class="error-banner">{{ emailError }}</div>
+            }
           </div>
         </div>
 
@@ -374,11 +323,7 @@
           <div class="field-box">
             <div class="label-row">
               <label>Laundry Items & Services</label>
-
-              <button
-                type="button"
-                class="link-btn"
-                (click)="addItemRow()">
+              <button type="button" class="link-btn" (click)="addItemRow()">
                 + Add Item
               </button>
             </div>
@@ -394,7 +339,6 @@
 
                     <label class="mini-label">
                       Service
-
                       <select
                         [(ngModel)]="item.serviceId"
                         [name]="'service-' + $index"
@@ -402,8 +346,7 @@
 
                         @for (service of services; track service.id) {
                           <option [ngValue]="service.id">
-                            {{ service.serviceName }} ·
-                            {{ currency(service.pricePerKg) }}/kg
+                            {{ service.serviceName }} · {{ currency(service.pricePerKg) }}/kg
                           </option>
                         }
                       </select>
@@ -411,7 +354,6 @@
 
                     <label class="mini-label">
                       Category
-
                       <select
                         [(ngModel)]="item.itemCategoryId"
                         [name]="'category-' + $index"
@@ -427,7 +369,6 @@
 
                     <label class="mini-label">
                       Weight (kg)
-
                       <div class="weight-del-row">
                         <input
                           type="number"
@@ -449,8 +390,7 @@
                   </div>
 
                   <p class="hint">
-                    Subtotal:
-                    {{ currency(getItemSubtotal(item)) }}
+                    Subtotal: {{ currency(getItemSubtotal(item)) }}
                   </p>
                 </div>
               }
@@ -473,8 +413,7 @@
               [(ngModel)]="form.notes"
               rows="3"
               placeholder="Fabric softener preference, stain alerts..."
-              class="input-field">
-            </textarea>
+              class="input-field"></textarea>
           </div>
         </div>
 
@@ -486,7 +425,6 @@
 
           <div class="field-box">
             <label>Booking Date <span class="req">*</span></label>
-
             <input
               type="date"
               name="bookingDate"
@@ -500,7 +438,6 @@
 
           <div class="field-box">
             <label>Expected Pickup Date <span class="req">*</span></label>
-
             <input
               type="date"
               name="pickupDate"
@@ -509,162 +446,181 @@
               class="input-field">
 
             @if (pickupDateError) {
-              <div class="error-banner">
-                {{ pickupDateError }}
-              </div>
+              <div class="error-banner">{{ pickupDateError }}</div>
             }
 
             <p class="hint">
               Regular bookings require at least 7 days.
               Express bookings can be picked up earlier, but not on the booking date.
             </p>
+
+            @if (form.pickupDate && !pickupDateError) {
+              <p class="hint">
+                {{ pickupCapacityMessage }}
+              </p>
+            }
           </div>
 
           <div class="express-row">
             <div>
               <span class="express-title">Express Option</span>
-              <span class="express-sub">
-                Priority processing (2× multiplier)
-              </span>
+              <span class="express-sub">Priority processing (2× multiplier)</span>
             </div>
 
             <label class="switch">
-              <input
-                type="checkbox"
-                name="isExpress"
-                [(ngModel)]="form.isExpress">
-
+              <input type="checkbox" name="isExpress" [(ngModel)]="form.isExpress">
               <span class="slider"></span>
             </label>
           </div>
         </div>
 
-        <!-- PAYMENT AND SUMMARY -->
-        <div class="card summary-card summary-payment-card">
-          <div class="card-header-line">
-            <h4 class="card-heading">Summary & Payment</h4>
+        @if (!isEditingBooking) {
+          <!-- PAYMENT AND SUMMARY -->
+          <div class="card summary-card summary-payment-card">
+            <div class="card-header-line">
+              <h4 class="card-heading">Summary & Payment</h4>
+            </div>
+
+            <div class="field-box">
+              <label>Amount Paid (₱)</label>
+              <input
+                type="number"
+                min="0"
+                [max]="grandTotal"
+                step="0.01"
+                name="amountPaid"
+                [(ngModel)]="form.amountPaid"
+                class="input-field">
+            </div>
+
+            <div class="field-box">
+              <label>Payment Method</label>
+              <select
+                [(ngModel)]="form.paymentMethod"
+                name="paymentMethod"
+                class="input-field">
+
+                <option value="">Select Payment Method</option>
+
+                @for (method of paymentMethodOptions; track method) {
+                  <option [value]="method">{{ method }}</option>
+                }
+              </select>
+            </div>
+
+            <div class="breakdown-box">
+              <div class="breakdown-row">
+                <span>Service Lines:</span>
+                <strong>{{ form.items.length }}</strong>
+              </div>
+
+              <div class="breakdown-row">
+                <span>Measured Weight:</span>
+                <strong>{{ totalWeight | number:'1.1-1' }} kg</strong>
+              </div>
+
+              <div class="breakdown-row">
+                <span>Base Subtotal:</span>
+                <strong>{{ currency(baseSubtotal) }}</strong>
+              </div>
+
+              <div class="breakdown-row text-orange">
+                <span>Express Surcharge:</span>
+                <strong>{{ currency(expressSurcharge) }}</strong>
+              </div>
+
+              <div class="breakdown-row">
+                <span>Amount Paid:</span>
+                <strong>{{ currency(form.amountPaid) }}</strong>
+              </div>
+
+              <div class="breakdown-row">
+                <span>Balance:</span>
+                <strong>{{ currency(balance) }}</strong>
+              </div>
+
+              <div class="breakdown-row">
+                <span>Payment Status:</span>
+                <strong>{{ currentPaymentStatus }}</strong>
+              </div>
+            </div>
+
+            <div>
+              <span class="total-label">Calculated Charges</span>
+              <div class="total-amount">{{ currency(grandTotal) }}</div>
+              <p class="total-caption">
+                Base amount × {{ form.isExpress ? 2 : 1 }} multiplier
+              </p>
+            </div>
           </div>
+        }
 
-          <div class="field-box">
-            <label>Amount Paid (₱)</label>
-            <input
-              type="number"
-              min="0"
-              [max]="grandTotal"
-              step="0.01"
-              name="amountPaid"
-              [(ngModel)]="form.amountPaid"
-              class="input-field">
-          </div>
+        <!-- SUBMIT ACTIONS -->
+        <div class="form-actions booking-form-actions">
+          <button
+            type="submit"
+            [disabled]="!isFormValid || isSaving"
+            class="btn btn-success full-btn">
 
-          <div class="field-box">
-            <label>Payment Method</label>
-            <select
-              name="paymentMethod"
-              [(ngModel)]="form.paymentMethod"
-              class="input-field">
-              <option value="">Not yet selected</option>
-              <option value="Cash">Cash</option>
-              <option value="GCash">GCash</option>
-              <option value="Bank Transfer">Bank Transfer</option>
-              <option value="Maya">Maya</option>
-              <option value="Other">Other</option>
-            </select>
-          </div>
+            @if (isSaving) {
+              Updating...
+            } @else {
+              {{ isEditingBooking ? 'Save Booking Changes →' : 'Submit Booking →' }}
+            }
+          </button>
+        </div>
 
-          <div class="breakdown-box">
-            <div class="breakdown-row">
-              <span>Service Lines:</span>
-              <strong>{{ form.items.length }}</strong>
-            </div>
-
-            <div class="breakdown-row">
-              <span>Measured Weight:</span>
-              <strong>{{ totalWeight | number:'1.1-1' }} kg</strong>
-            </div>
-
-            <div class="breakdown-row">
-              <span>Base Subtotal:</span>
-              <strong>{{ currency(baseSubtotal) }}</strong>
-            </div>
-
-            <div class="breakdown-row text-orange">
-              <span>Express Surcharge:</span>
-              <strong>{{ currency(expressSurcharge) }}</strong>
-            </div>
-
-            <div class="breakdown-row">
-              <span>Amount Paid:</span>
-              <strong>{{ currency(form.amountPaid) }}</strong>
-            </div>
-
-            <div class="breakdown-row">
-              <span>Balance:</span>
-              <strong>{{ currency(balance) }}</strong>
-            </div>
-
-            <div class="breakdown-row">
-              <span>Payment Status:</span>
-              <strong>{{ currentPaymentStatus }}</strong>
-            </div>
-          </div>
-
-          <div>
-            <span class="total-label">Calculated Charges</span>
-            <div class="total-amount">
-              {{ currency(grandTotal) }}
-            </div>
-
-            <p class="total-caption">
-              Base amount × {{ form.isExpress ? 2 : 1 }} multiplier
-            </p>
-          </div>
-
-          <div class="form-actions">
-            <button
-              type="submit"
-              [disabled]="!isFormValid || isSaving"
-              class="btn btn-success full-btn">
-              {{ isSaving ? 'Saving...' : 'Submit Booking →' }}
-            </button>
-
+        <!-- RESET ACTIONS -->
+        <div class="form-actions booking-form-actions">
+          @if (!isEditingBooking) {
             <button
               type="button"
               (click)="resetForm()"
               class="btn btn-secondary full-btn">
               Reset Form
             </button>
-          </div>
+          }
         </div>
-
-
       </div>
     </form>
   }
 </div>
 
-<!-- ============================================ -->
 <!-- BOOKING DETAILS MODAL -->
-<!-- ============================================ -->
-
 @if (showBookingDetails && selectedBooking) {
   <div class="modal-overlay" (click)="closeBookingDetails()">
     <div class="card details-modal" (click)="$event.stopPropagation()">
 
-      <div class="card-header-line">
+      <!-- MODAL HEADER -->
+      <div class="card-header-line booking-modal-header">
         <div>
           <h3 class="card-heading">Booking Details</h3>
           <p>{{ selectedBooking.bookingNumber }}</p>
         </div>
 
-        <button
-          type="button"
-          class="remove-row-btn"
-          (click)="closeBookingDetails()">
-          ×
-        </button>
+        <div class="modal-header-actions">
+          @if (
+            selectedBooking.status !== 'Cancelled' &&
+            selectedBooking.status !== 'Done'
+          ) {
+            <button
+              type="button"
+              class="btn btn-primary"
+              (click)="editBooking(selectedBooking)">
+              Update Booking
+            </button>
+          }
+
+          <button
+            type="button"
+            class="remove-row-btn"
+            (click)="closeBookingDetails()">
+            ×
+          </button>
+        </div>
       </div>
 
+      <!-- CUSTOMER INFORMATION -->
       <div class="details-section">
         <h4>Customer Information</h4>
         <p><strong>Name:</strong> {{ selectedBooking.customerName }}</p>
@@ -673,16 +629,115 @@
         <p><strong>Address:</strong> {{ selectedBooking.address }}</p>
       </div>
 
+      <!-- BOOKING INFORMATION -->
       <div class="details-section">
         <h4>Booking Information</h4>
         <p><strong>Booking Date:</strong> {{ selectedBooking.bookingDate }}</p>
         <p><strong>Pickup Date:</strong> {{ selectedBooking.pickupDate || '—' }}</p>
         <p><strong>Priority:</strong> {{ selectedBooking.isExpress ? 'Express' : 'Regular' }}</p>
         <p><strong>Total Weight:</strong> {{ selectedBooking.totalWeight }} kg</p>
-        <p><strong>Status:</strong> {{ selectedBooking.status }}</p>
+
+        <!-- STATUS AND CANCEL BUTTON -->
+        <div class="booking-status-actions">
+          <div class="field-box status-field">
+            <label>Booking Status</label>
+            <select
+              [ngModel]="selectedBooking.status"
+              (ngModelChange)="updateStatus(selectedBooking!, $event)"
+              name="bookingStatus"
+              class="input-field"
+              [disabled]="
+                selectedBooking.status === 'Cancelled' ||
+                selectedBooking.status === 'Done'
+              ">
+              @for (status of bookingStatusOptions; track status) {
+                <option
+                  [value]="status"
+                  [disabled]="status === 'Cancelled'">
+                  {{ status }}
+                </option>
+              }
+            </select>
+          </div>
+
+          <div class="cancel-action">
+            @if (
+              selectedBooking.status !== 'Cancelled' &&
+              selectedBooking.status !== 'Done'
+            ) {
+              <button
+                type="button"
+                class="btn btn-cancel-booking"
+                [disabled]="isCancellingBooking"
+                (click)="openCancellationForm()">
+                Cancel Booking
+              </button>
+            } @else if (selectedBooking.status === 'Cancelled') {
+              <span class="cancelled-label">Cancelled</span>
+            } @else if (selectedBooking.status === 'Done') {
+              <span class="completed-label">Completed</span>
+            }
+          </div>
+        </div>
+
+        <!-- SAVED CANCELLATION REASON -->
+        @if (selectedBooking.status === 'Cancelled') {
+          <div class="cancellation-record">
+            <strong>Cancellation Reason:</strong>
+            <p>{{ selectedBooking.cancellationReason || 'No reason recorded.' }}</p>
+          </div>
+        }
+
+        <!-- CANCELLATION FORM -->
+        @if (
+          showCancellationForm &&
+          selectedBooking.status !== 'Cancelled' &&
+          selectedBooking.status !== 'Done'
+        ) {
+          <div class="cancellation-form">
+            <h5>Cancel Booking</h5>
+
+            <p class="hint">
+              Please provide a reason before cancelling this booking.
+            </p>
+
+            <div class="field-box">
+              <label>Reason for Cancellation</label>
+              <textarea
+                [(ngModel)]="cancellationReason"
+                name="cancellationReason"
+                rows="3"
+                maxlength="300"
+                placeholder="Enter the reason for cancelling..."
+                class="input-field"></textarea>
+            </div>
+
+            <div class="form-actions cancellation-actions">
+              <button
+                type="button"
+                class="btn btn-secondary"
+                (click)="closeCancellationForm()">
+                Keep Booking
+              </button>
+
+              <button
+                type="button"
+                class="btn btn-primary"
+                [disabled]="
+                  isCancellingBooking ||
+                  cancellationReason.trim().length < 5
+                "
+                (click)="cancelBooking()">
+                {{ isCancellingBooking ? 'Cancelling...' : 'Confirm Cancellation' }}
+              </button>
+            </div>
+          </div>
+        }
+
         <p><strong>Notes:</strong> {{ selectedBooking.notes || '—' }}</p>
       </div>
 
+      <!-- LAUNDRY ITEMS -->
       <div class="details-section">
         <h4>Laundry Items</h4>
 
@@ -711,9 +766,9 @@
         </div>
       </div>
 
+      <!-- PAYMENT SUMMARY -->
       <div class="details-section">
         <h4>Payment Summary</h4>
-
         <p><strong>Total Charges:</strong> {{ currency(selectedBooking.totalAmount) }}</p>
         <p><strong>Amount Paid:</strong> {{ currency(selectedBooking.amountPaid) }}</p>
         <p><strong>Balance:</strong> {{ currency(selectedBooking.balance) }}</p>
@@ -721,56 +776,59 @@
         <p><strong>Payment Method:</strong> {{ selectedBooking.paymentMethod || '—' }}</p>
       </div>
 
-      <div class="details-section">
-        <h4>Update Payment</h4>
+      <!-- UPDATE PAYMENT -->
+      @if (selectedBooking.status !== 'Cancelled' && selectedBooking.balance > 0) {
+        <div class="details-section">
+          <h4>Update Payment</h4>
 
-        <div class="field-box">
-          <label>Updated Amount Paid (₱)</label>
-
-          <input
-            type="number"
-            min="0"
-            [max]="selectedBooking.totalAmount"
-            step="0.01"
-            [(ngModel)]="paymentDraft.amountPaid"
-            name="updatedAmountPaid"
-            class="input-field">
-        </div>
-
-        <div class="field-box">
-          <label>Payment Method</label>
-
-          <select
-            [(ngModel)]="paymentDraft.paymentMethod"
-            name="updatedPaymentMethod"
-            class="input-field">
-
-            <option value="">Not yet selected</option>
-            <option value="Cash">Cash</option>
-            <option value="GCash">GCash</option>
-            <option value="Bank Transfer">Bank Transfer</option>
-            <option value="Maya">Maya</option>
-            <option value="Other">Other</option>
-          </select>
-        </div>
-
-        @if (paymentUpdateError) {
-          <div class="error-banner">
-            {{ paymentUpdateError }}
+          <div class="field-box">
+            <label>New Payment Amount (₱)</label>
+            <input
+              type="number"
+              min="0.01"
+              [max]="selectedBooking.balance"
+              step="0.01"
+              [(ngModel)]="paymentDraft.paymentAmount"
+              name="updatedPaymentAmount"
+              class="input-field">
           </div>
-        }
 
-        <button
-          type="button"
-          class="btn btn-primary full-btn"
-          [disabled]="isUpdatingPayment || !!paymentUpdateError"
-          (click)="savePaymentUpdate()">
+          <div class="field-box">
+            <label>Payment Method</label>
+            <select
+              name="updatedPaymentMethod"
+              [(ngModel)]="paymentDraft.paymentMethod"
+              class="input-field">
 
-          {{ isUpdatingPayment ? 'Updating...' : 'Save Payment Update' }}
-        </button>
-      </div>
+              <option value="">Select Payment Method</option>
 
-      <div class="form-actions">
+              @for (method of paymentMethodOptions; track method) {
+                <option [value]="method">{{ method }}</option>
+              }
+            </select>
+          </div>
+
+          @if (paymentUpdateError) {
+            <div class="error-banner">{{ paymentUpdateError }}</div>
+          }
+
+          <button
+            type="button"
+            class="btn btn-primary full-btn"
+            [disabled]="
+              isUpdatingPayment ||
+              paymentDraft.paymentAmount <= 0 ||
+              !paymentDraft.paymentMethod ||
+              paymentDraft.paymentAmount > selectedBooking.balance
+            "
+            (click)="savePaymentUpdate()">
+            {{ isUpdatingPayment ? 'Saving Payment...' : 'Record Payment' }}
+          </button>
+        </div>
+      }
+
+      <!-- MODAL FOOTER ACTIONS -->
+      <div class="form-actions modal-footer-actions">
         <button
           type="button"
           class="btn btn-secondary"
@@ -785,14 +843,24 @@
           View Receipt
         </button>
       </div>
+
+      <!-- MODAL ALERTS AT THE BOTTOM -->
+      @if (errorMessage || successMessage) {
+        <div class="modal-feedback">
+          @if (errorMessage) {
+            <div class="error-banner">{{ errorMessage }}</div>
+          }
+
+          @if (successMessage) {
+            <div class="success-banner">{{ successMessage }}</div>
+          }
+        </div>
+      }
     </div>
   </div>
 }
 
-<!-- ============================================ -->
 <!-- CUSTOMER HISTORY MODAL -->
-<!-- ============================================ -->
-
 @if (showCustomerDetails && selectedCustomer) {
   <div class="modal-overlay" (click)="closeCustomerDetails()">
     <div class="card details-modal" (click)="$event.stopPropagation()">
@@ -803,10 +871,7 @@
           <p>{{ selectedCustomer.customerName }}</p>
         </div>
 
-        <button
-          type="button"
-          class="remove-row-btn"
-          (click)="closeCustomerDetails()">
+        <button type="button" class="remove-row-btn" (click)="closeCustomerDetails()">
           ×
         </button>
       </div>
@@ -864,19 +929,14 @@
         </div>
       </div>
 
-      <button
-        type="button"
-        class="btn btn-secondary full-btn"
-        (click)="closeCustomerDetails()">
+      <button type="button" class="btn btn-secondary full-btn" (click)="closeCustomerDetails()">
         Close
       </button>
     </div>
-  </div> 
+  </div>
 }
-<!-- ============================================ -->
-<!-- RECEIPT PREVIEW MODAL -->
-<!-- ============================================ -->
 
+<!-- RECEIPT PREVIEW MODAL -->
 @if (showReceipt && receiptBooking) {
   <div class="receipt-overlay">
     <div class="receipt-modal" id="customer-receipt-preview">
@@ -885,40 +945,16 @@
         <h2>LABA</h2>
         <p>Laundry Automated Booking Assistant</p>
         <p>Official Laundry Booking Receipt</p>
-
         <span>Payment Receipt</span>
       </div>
 
       <div class="receipt-details">
-        <p>
-          <strong>Booking ID:</strong>
-          {{ receiptBooking.bookingNumber }}
-        </p>
-
-        <p>
-          <strong>Customer:</strong>
-          {{ receiptBooking.customerName }}
-        </p>
-
-        <p>
-          <strong>Contact:</strong>
-          {{ receiptBooking.phoneNumber }}
-        </p>
-
-        <p>
-          <strong>Booking Date:</strong>
-          {{ receiptBooking.bookingDate }}
-        </p>
-
-        <p>
-          <strong>Pickup Date:</strong>
-          {{ receiptBooking.pickupDate || '—' }}
-        </p>
-
-        <p>
-          <strong>Priority:</strong>
-          {{ receiptBooking.isExpress ? 'Express' : 'Regular' }}
-        </p>
+        <p><strong>Booking ID:</strong> {{ receiptBooking.bookingNumber }}</p>
+        <p><strong>Customer:</strong> {{ receiptBooking.customerName }}</p>
+        <p><strong>Contact:</strong> {{ receiptBooking.phoneNumber }}</p>
+        <p><strong>Booking Date:</strong> {{ receiptBooking.bookingDate }}</p>
+        <p><strong>Pickup Date:</strong> {{ receiptBooking.pickupDate || '—' }}</p>
+        <p><strong>Priority:</strong> {{ receiptBooking.isExpress ? 'Express' : 'Regular' }}</p>
       </div>
 
       <h3>Laundry Items</h3>
@@ -948,48 +984,21 @@
       </div>
 
       <div class="receipt-totals">
-        <p>
-          <span>Total Charges</span>
-          <strong>{{ currency(receiptBooking.totalAmount) }}</strong>
-        </p>
-
-        <p>
-          <span>Amount Paid</span>
-          <strong>{{ currency(receiptBooking.amountPaid) }}</strong>
-        </p>
-
-        <p>
-          <span>Balance</span>
-          <strong>{{ currency(receiptBooking.balance) }}</strong>
-        </p>
-
-        <p>
-          <span>Payment Method</span>
-          <strong>{{ receiptBooking.paymentMethod || '—' }}</strong>
-        </p>
-
-        <p>
-          <span>Payment Status</span>
-          <strong>{{ receiptBooking.paymentStatus }}</strong>
-        </p>
+        <p><span>Total Charges</span><strong>{{ currency(receiptBooking.totalAmount) }}</strong></p>
+        <p><span>Amount Paid</span><strong>{{ currency(receiptBooking.amountPaid) }}</strong></p>
+        <p><span>Balance</span><strong>{{ currency(receiptBooking.balance) }}</strong></p>
+        <p><span>Payment Method</span><strong>{{ receiptBooking.paymentMethod || '—' }}</strong></p>
+        <p><span>Payment Status</span><strong>{{ receiptBooking.paymentStatus }}</strong></p>
       </div>
 
-      <div class="receipt-thanks">
-        Thank you for choosing LABA!
-      </div>
+      <div class="receipt-thanks">Thank you for choosing LABA!</div>
 
       <div class="receipt-actions">
-        <button
-          type="button"
-          class="btn btn-secondary"
-          (click)="closeReceipt()">
+        <button type="button" class="btn btn-secondary" (click)="closeReceipt()">
           Close
         </button>
 
-        <button
-          type="button"
-          class="btn btn-primary"
-          (click)="printReceipt()">
+        <button type="button" class="btn btn-primary" (click)="printReceipt()">
           Print Receipt
         </button>
       </div>
