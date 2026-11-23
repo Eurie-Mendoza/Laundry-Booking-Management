@@ -86,7 +86,7 @@
 
         <div class="calendar-preview">
           @if (selectedDate) {
-            <h5>Bookings for {{ selectedDate }}</h5>
+            <h5>Pickups for {{ selectedDate }}</h5>
 
             @if (selectedDateBookings.length > 0) {
               @for (booking of selectedDateBookings; track booking.id) {

@@ -1517,7 +1517,7 @@ export class CustomerComponent implements OnInit {
   }
 
   // --------------------------------------------------
-  // BOOKING CALENDAR
+  // BOOKING CALENDAR - BASED ON PICKUP DATE
   // --------------------------------------------------
 
   get calendarMonthLabel(): string {
@@ -1536,6 +1536,13 @@ export class CustomerComponent implements OnInit {
     );
   }
 
+  // Convert pickup date to YYYY-MM-DD for calendar comparison.
+  private getPickupDateKey(
+    pickupDate: string | null | undefined
+  ): string {
+    return String(pickupDate || '').trim().slice(0, 10);
+  }
+
   changeMonth(amount: number): void {
     this.calendarMonth = new Date(
       this.calendarMonth.getFullYear(),
@@ -1548,21 +1555,22 @@ export class CustomerComponent implements OnInit {
     this.selectedDate = dateKey;
   }
 
+  // Display bookings scheduled for pickup on the selected date.
   get selectedDateBookings(): BookingRecord[] {
     if (!this.selectedDate) {
       return [];
     }
 
-    return this.customerService.getBookingsOnDate(
-      this.bookings,
+    return this.bookings.filter(booking =>
+      this.getPickupDateKey(booking.pickupDate) ===
       this.selectedDate
     );
   }
 
+  // Highlight dates that have scheduled pickups.
   hasBookingsOnDate(dateKey: string): boolean {
-    return this.customerService.hasBookingsOnDate(
-      this.bookings,
-      dateKey
+    return this.bookings.some(booking =>
+      this.getPickupDateKey(booking.pickupDate) === dateKey
     );
   }
 
