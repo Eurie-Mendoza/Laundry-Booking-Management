@@ -3,11 +3,9 @@
 
   <div class="login-left">
 
-    <span class="login-label">LOGIN</span>
+    <h2 class="login-label">LOGIN</h2>
 
     <div class="login-content">
-
-      <h2>LOG-IN Form</h2>
 
       <form class="login-card" (ngSubmit)="login()">
 
@@ -45,14 +43,13 @@
 
         <div class="login-actions">
 
-          <span class="demo-credentials">
-            Demo:
-            <strong>admin / 1234</strong>
-          </span>
-
-          <button type="submit" [disabled]="isLoading">
+        <button type="submit" [disabled]="isLoading">
+          @if (isLoading) {
+            Checking...
+          } @else {
             Log-in
-          </button>
+          }
+        </button>
 
         </div>
 
@@ -62,24 +59,8 @@
   </div>
 
   <div class="login-right">
-
-    <div class="brand-content">
-
-      <div class="brand-icon">L</div>
-
-      <h1>L.A.B.A.</h1>
-
-      <h2>Laundry Automated Booking Assistant</h2>
-
-      <p>
-        A smarter and more organized way to manage your laundry
-        bookings, customers, services, and payments.
-      </p>
-
-      <div class="brand-footer">
-        LAUNDRY BOOKING MANAGEMENT SYSTEM
-      </div>
-
+    <div class="brand-icon">
+      <img src="/L.A.B.A(logo).jfif" alt="LABA Logo">
     </div>
 
   </div>

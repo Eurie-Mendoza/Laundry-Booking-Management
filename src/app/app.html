@@ -1,5 +1,8 @@
+
 @if (!isLoggedIn) {
-  <app-log-in (loginSuccess)="onLoginSuccess($event)"></app-log-in>
+<app-log-in
+  (loginSuccess)="handleLoginSuccess($event)"
+></app-log-in>
 } @else {
 
 <div
@@ -22,13 +25,17 @@
 
       <div class="brand">
         <div class="brand-logo">
-          <span>L</span>
+          <img
+            [src]="shopLogo"
+            [alt]="shopName + ' logo'"
+            (error)="onShopLogoError()"
+          >
         </div>
 
         <span
           class="brand-name"
           *ngIf="!sidebarCollapsed || mobileSidebarOpen">
-          L.A.B.A.
+          {{ shopName }}
         </span>
       </div>
 
@@ -45,11 +52,11 @@
     <!-- Navigation -->
     <nav class="sidebar-navigation">
 
-        <p
-          class="navigation-label"
-          *ngIf="!sidebarCollapsed || mobileSidebarOpen">
-          MAIN MENU
-        </p>
+      <p
+        class="navigation-label"
+        *ngIf="!sidebarCollapsed || mobileSidebarOpen">
+        MAIN MENU
+      </p>
 
       <button
         type="button"
@@ -127,22 +134,23 @@
     </div>
 
     <!-- User information -->
-    <div
-      class="sidebar-user"
-      *ngIf="!sidebarCollapsed || mobileSidebarOpen">
-
-      <div class="user-avatar">AD</div>
-
-      <div class="user-information">
-        <strong>Admin Staff</strong>
-        <span>Shop Administrator</span>
+    <div class="sidebar-user"
+        *ngIf="!sidebarCollapsed || mobileSidebarOpen">
+      <div class="user-avatar">
+        {{ userInitials }}
       </div>
 
+      <div class="user-information">
+        <strong>{{ currentUsername }}</strong>
+        <span>{{ currentUserRole }}</span>
+      </div>
     </div>
+
     <button class="logout-btn" type="button" (click)="logout()">
       <span>⏻</span>
       <span>Log out</span>
     </button>
+
   </aside>
 
   <!-- MAIN WORKSPACE -->
@@ -174,7 +182,7 @@
       </button>
 
       <div class="header-clock">
-        <strong>{{ 'L.A.B.A.' }}</strong>
+        <strong>L.A.B.A.</strong>
         <span>Laundry Booking Manager</span>
       </div>
 
@@ -185,38 +193,38 @@
 
       <ng-container [ngSwitch]="activeTab">
 
-          <!-- OVERVIEW -->
-          <section *ngSwitchCase="'overview'" class="overview-page">
+        <!-- OVERVIEW -->
+        <section *ngSwitchCase="'overview'" class="overview-page">
 
-            <!-- Welcome -->
-            <div class="welcome-section">
-              <div>
-                <h2>Welcome back!</h2>
-                <p>Here's what's happening in your laundry shop.</p>
-              </div>
-
-              <button
-                type="button"
-                class="dashboard-refresh-button"
-                (click)="loadDashboard()"
-                [disabled]="isLoadingDashboard">
-                ↻ Refresh
-              </button>
+          <!-- Welcome -->
+          <div class="welcome-section">
+            <div>
+              <h2>Welcome back!</h2>
+              <p>Here's what's happening in your laundry shop.</p>
             </div>
 
-            <!-- Loading and error messages -->
-            <div *ngIf="isLoadingDashboard" class="dashboard-message">
-              Loading dashboard information...
-            </div>
+            <button
+              type="button"
+              class="dashboard-refresh-button"
+              (click)="loadDashboard()"
+              [disabled]="isLoadingDashboard">
+              ↻ Refresh
+            </button>
+          </div>
 
-            <div *ngIf="dashboardError" class="dashboard-error">
-              {{ dashboardError }}
-              <button type="button" (click)="loadDashboard()">Try again</button>
-            </div>
+          <!-- Loading and error messages -->
+          <div *ngIf="isLoadingDashboard" class="dashboard-message">
+            Loading dashboard information...
+          </div>
 
-            <ng-container *ngIf="!isLoadingDashboard && !dashboardError">
-                
-              <!-- OVERVIEW METRICS -->
+          <div *ngIf="dashboardError" class="dashboard-error">
+            {{ dashboardError }}
+            <button type="button" (click)="loadDashboard()">Try again</button>
+          </div>
+
+          <ng-container *ngIf="!isLoadingDashboard && !dashboardError">
+
+            <!-- OVERVIEW METRICS -->
             <div class="overview-metrics">
 
               <article class="metric-card">
@@ -245,102 +253,108 @@
 
             </div>
 
-              <!-- NOTIFICATION + ESTIMATOR -->
-              <div class="overview-top-grid">
+            <!-- NOTIFICATION + ESTIMATOR -->
+            <div class="overview-top-grid">
 
-                <!-- LATEST NOTIFICATION -->
-                <section class="dashboard-card notification-snapshot-card">
+              <!-- LATEST NOTIFICATION -->
+              <section class="dashboard-card notification-snapshot-card">
 
-                  <div class="dashboard-card-heading">
-                    <div>
-                      <span class="dashboard-eyebrow">LATEST UPDATE</span>
-                      <h3>Recent Notification</h3>
-                    </div>
-
-                    <span class="dashboard-heading-icon">♧</span>
+                <div class="dashboard-card-heading">
+                  <div>
+                    <span class="dashboard-eyebrow">LATEST UPDATE</span>
+                    <h3>Recent Notification</h3>
                   </div>
 
-                  <ng-container *ngIf="latestNotification; else noNotification">
+                  <span class="dashboard-heading-icon">♧</span>
+                </div>
 
-                    <div
-                      class="notification-snapshot-content"
-                      [class.notification-pending]="latestNotification.type === 'pending'"
-                      [class.notification-progress]="latestNotification.type === 'progress'"
-                      [class.notification-payment]="latestNotification.type === 'payment'">
+                <ng-container *ngIf="latestNotification; else noNotification">
 
-                      <div class="notification-snapshot-title">
-                        <span class="notification-dot"></span>
-                        <strong>{{ latestNotification.title }}</strong>
-                      </div>
+                  <div
+                    class="notification-snapshot-content"
+                    [class.notification-pending]="latestNotification.type === 'pending'"
+                    [class.notification-progress]="latestNotification.type === 'progress'"
+                    [class.notification-payment]="latestNotification.type === 'payment'">
 
-                      <p>{{ latestNotification.message }}</p>
-
-                      <div class="notification-snapshot-meta">
-                        <span>{{ latestNotification.bookingNumber }}</span>
-                        <span>{{ latestNotification.date }}</span>
-                      </div>
-
+                    <div class="notification-snapshot-title">
+                      <span class="notification-dot"></span>
+                      <strong>{{ latestNotification.title }}</strong>
                     </div>
 
-                  </ng-container>
+                    <p>{{ latestNotification.message }}</p>
 
-                  <ng-template #noNotification>
-                    <div class="dashboard-empty-state">
-                      <span class="empty-state-icon">✓</span>
-                      <strong>You're all caught up!</strong>
-                      <p>There are no recent booking notifications.</p>
-                    </div>
-                  </ng-template>
-
-                  <button
-                    type="button"
-                    class="dashboard-text-button"
-                    (click)="openNotifications()">
-                    View all notifications →
-                  </button>
-
-                </section>
-
-                <!-- QUICK WEIGHT AND PRICE ESTIMATOR -->
-                <section class="dashboard-card estimator-card">
-
-                  <div class="dashboard-card-heading">
-                    <div>
-                      <span class="dashboard-eyebrow">QUICK TOOL</span>
-                      <h3>Weight & Price Estimator</h3>
+                    <div class="notification-snapshot-meta">
+                      <span>{{ latestNotification.bookingNumber }}</span>
+                      <span>{{ latestNotification.date }}</span>
                     </div>
 
-                    <span class="dashboard-heading-icon">⚖</span>
                   </div>
+
+                </ng-container>
+
+                <ng-template #noNotification>
+                  <div class="dashboard-empty-state">
+                    <span class="empty-state-icon">✓</span>
+                    <strong>You're all caught up!</strong>
+                    <p>There are no recent booking notifications.</p>
+                  </div>
+                </ng-template>
+
+                <button
+                  type="button"
+                  class="dashboard-text-button"
+                  (click)="openNotifications()">
+                  View all notifications →
+                </button>
+
+              </section>
+
+              <!-- QUICK WEIGHT AND PRICE ESTIMATOR -->
+              <section class="dashboard-card estimator-card">
+
+                <div class="dashboard-card-heading">
+                  <div>
+                    <span class="dashboard-eyebrow">QUICK TOOL</span>
+                    <h3>Weight & Price Estimator</h3>
+                  </div>
+                  <span class="dashboard-heading-icon">⚖</span>
+                </div>
+
+                <div *ngIf="isLoadingEstimator" class="estimator-validation">
+                  Loading services and shop rules...
+                </div>
+
+                <div *ngIf="estimatorError" class="estimator-validation">
+                  {{ estimatorError }}
+                </div>
+
+                <ng-container *ngIf="!isLoadingEstimator && !estimatorError">
 
                   <div class="estimator-fields">
 
                     <div class="estimator-field">
                       <label for="estimator-service">Laundry Service</label>
-
                       <select
                         id="estimator-service"
                         [value]="selectedEstimatorIndex"
-                        (change)="onEstimatorServiceChange($event)">
+                        (change)="onEstimatorServiceChange($event)"
+                        [disabled]="estimatorServices.length === 0">
 
                         <option
                           *ngFor="let service of estimatorServices; let i = index"
                           [value]="i">
-
-                          {{ service.name }} - {{ service.category }}
+                          {{ service.name }}
                         </option>
-
                       </select>
                     </div>
 
                     <div class="estimator-field">
                       <label for="estimator-weight">Laundry Weight (kg)</label>
-
                       <input
                         id="estimator-weight"
                         type="number"
-                        min="3"
-                        max="20"
+                        [min]="minimumWeight"
+                        [max]="maximumWeight"
                         step="0.5"
                         [value]="estimatorWeight"
                         (input)="onEstimatorWeightChange($event)">
@@ -350,11 +364,17 @@
                       <input
                         type="checkbox"
                         [checked]="estimatorExpress"
+                        [disabled]="!expressEnabled"
                         (change)="onEstimatorExpressChange($event)">
 
                       <span>
                         <strong>Express Service</strong>
-                        <small>Double the regular service price</small>
+                        <small *ngIf="expressEnabled">
+                          {{ expressMultiplier }}× the regular service price
+                        </small>
+                        <small *ngIf="!expressEnabled">
+                          Express service is currently unavailable
+                        </small>
                       </span>
                     </label>
 
@@ -372,19 +392,22 @@
                     <div class="estimator-total">
                       <div>
                         <span>Estimated Total</span>
-                        <small *ngIf="estimatorExpress">Express rate applied (2×)</small>
-                        <small *ngIf="!estimatorExpress">Regular service rate</small>
+
+                        <small *ngIf="estimatorExpress">
+                          Express rate applied ({{ expressMultiplier }}×)
+                        </small>
+
+                        <small *ngIf="!estimatorExpress">
+                          Regular service rate
+                        </small>
                       </div>
 
-                      <strong>
-                        {{ formatCurrency(estimatorTotal) }}
-                      </strong>
+                      <strong>{{ formatCurrency(estimatorTotal) }}</strong>
                     </div>
 
-                    <p
-                      class="estimator-validation"
-                      *ngIf="!isEstimatorWeightValid">
-                      Please enter a weight between 3 kg and 20 kg.
+                    <p class="estimator-validation" *ngIf="!isEstimatorWeightValid">
+                      Please enter a weight between
+                      {{ minimumWeight }} kg and {{ maximumWeight }} kg.
                     </p>
 
                     <p class="estimator-disclaimer">
@@ -393,169 +416,160 @@
 
                   </div>
 
-                </section>
+                </ng-container>
 
-              </div>
+              </section>
 
-              <!-- PICKUP SCHEDULES -->
-              <div class="overview-schedule-grid">
+            </div>
 
-                <!-- TODAY'S SCHEDULE -->
-                <section class="dashboard-card schedule-card">
+            <!-- PICKUP SCHEDULES -->
+            <div class="overview-schedule-grid">
 
-                  <div class="dashboard-card-heading">
-                    <div>
-                      <span class="dashboard-eyebrow">PICKUP OVERVIEW</span>
-                      <h3>Today's Schedule</h3>
-                      <p class="schedule-date">{{ formatScheduleDate(todayDate) }}</p>
+              <!-- TODAY'S SCHEDULE -->
+              <section class="dashboard-card schedule-card">
+
+                <div class="dashboard-card-heading">
+                  <div>
+                    <span class="dashboard-eyebrow">PICKUP OVERVIEW</span>
+                    <h3>Today's Schedule</h3>
+                    <p class="schedule-date">{{ formatScheduleDate(todayDate) }}</p>
+                  </div>
+
+                  <span class="dashboard-heading-icon">▦</span>
+                </div>
+
+                <div class="schedule-count">
+                  <strong>{{ todaysSchedule.length }}</strong>
+                  <span>pickup{{ todaysSchedule.length === 1 ? '' : 's' }} today</span>
+                </div>
+
+                <div
+                  *ngIf="todaysSchedule.length > 0; else noTodaySchedule"
+                  class="schedule-list">
+
+                  <article
+                    class="schedule-item"
+                    *ngFor="let booking of todaysSchedule">
+
+                    <div class="schedule-item-main">
+                      <strong>{{ booking.customerName }}</strong>
+                      <span>{{ booking.bookingNumber }}</span>
                     </div>
 
-                    <span class="dashboard-heading-icon">▦</span>
-                  </div>
+                    <div class="schedule-item-details">
+                      <span>{{ booking.totalWeight || 0 }} kg</span>
 
-                  <div class="schedule-count">
-                    <strong>{{ todaysSchedule.length }}</strong>
-                    <span>pickup{{ todaysSchedule.length === 1 ? '' : 's' }} today</span>
-                  </div>
-
-                  <div *ngIf="todaysSchedule.length > 0; else noTodaySchedule"
-                      class="schedule-list">
-
-                    <article
-                      class="schedule-item"
-                      *ngFor="let booking of todaysSchedule">
-
-                      <div class="schedule-item-main">
-                        <strong>{{ booking.customerName }}</strong>
-                        <span>{{ booking.bookingNumber }}</span>
-                      </div>
-
-                      <div class="schedule-item-details">
-                        <span>
-                          {{ booking.totalWeight || 0 }} kg
-                        </span>
-
-                        <span
-                          class="booking-status"
-                          [class.status-pending]="booking.status === 'Pending'"
-                          [class.status-progress]="booking.status === 'In Progress'"
-                          [class.status-done]="booking.status === 'Done'">
-
-                          {{ booking.status }}
-                        </span>
-                      </div>
-
-                    </article>
-
-                  </div>
-
-                  <ng-template #noTodaySchedule>
-                    <div class="dashboard-empty-state schedule-empty-state">
-                      <span class="empty-state-icon">▦</span>
-                      <strong>No pickups scheduled today</strong>
-                      <p>There are no bookings scheduled for pickup today.</p>
-                    </div>
-                  </ng-template>
-
-                </section>
-
-                <!-- UPCOMING SCHEDULE -->
-                <section class="dashboard-card schedule-card">
-
-                  <div class="dashboard-card-heading upcoming-heading">
-                    <div>
-                      <span class="dashboard-eyebrow">PLAN AHEAD</span>
-                      <h3>Upcoming Schedule</h3>
-                      <p class="schedule-date">Scheduled laundry pickups</p>
+                      <span
+                        class="booking-status"
+                        [class.status-pending]="booking.status === 'Pending'"
+                        [class.status-progress]="booking.status === 'In Progress'"
+                        [class.status-done]="booking.status === 'Done'">
+                        {{ booking.status }}
+                      </span>
                     </div>
 
-                    <span class="dashboard-heading-icon">▤</span>
+                  </article>
+
+                </div>
+
+                <ng-template #noTodaySchedule>
+                  <div class="dashboard-empty-state schedule-empty-state">
+                    <span class="empty-state-icon">▦</span>
+                    <strong>No pickups scheduled today</strong>
+                    <p>There are no bookings scheduled for pickup today.</p>
+                  </div>
+                </ng-template>
+
+              </section>
+
+              <!-- UPCOMING SCHEDULE -->
+              <section class="dashboard-card schedule-card">
+
+                <div class="dashboard-card-heading upcoming-heading">
+                  <div>
+                    <span class="dashboard-eyebrow">PLAN AHEAD</span>
+                    <h3>Upcoming Schedule</h3>
+                    <p class="schedule-date">Scheduled laundry pickups</p>
                   </div>
 
-                  <!-- Schedule filter -->
-                  <div class="schedule-filter">
+                  <span class="dashboard-heading-icon">▤</span>
+                </div>
 
-                    <span>Show:</span>
+                <!-- Schedule filter -->
+                <div class="schedule-filter">
+                  <span>Show:</span>
 
-                    <button
-                      type="button"
-                      [class.active]="scheduleFilter === '3-days'"
-                      (click)="setScheduleFilter('3-days')">
-                      Next 3 Days
-                    </button>
+                  <button
+                    type="button"
+                    [class.active]="scheduleFilter === '3-days'"
+                    (click)="setScheduleFilter('3-days')">
+                    Next 3 Days
+                  </button>
 
-                    <button
-                      type="button"
-                      [class.active]="scheduleFilter === '7-days'"
-                      (click)="setScheduleFilter('7-days')">
-                      Next 7 Days
-                    </button>
+                  <button
+                    type="button"
+                    [class.active]="scheduleFilter === '7-days'"
+                    (click)="setScheduleFilter('7-days')">
+                    Next 7 Days
+                  </button>
+                </div>
 
-                  </div>
+                <div class="schedule-count">
+                  <strong>{{ upcomingSchedule.length }}</strong>
+                  <span>upcoming pickup{{ upcomingSchedule.length === 1 ? '' : 's' }}</span>
+                </div>
 
-                  <div class="schedule-count">
-                    <strong>{{ upcomingSchedule.length }}</strong>
-                    <span>upcoming pickup{{ upcomingSchedule.length === 1 ? '' : 's' }}</span>
-                  </div>
+                <div
+                  *ngIf="upcomingSchedule.length > 0; else noUpcomingSchedule"
+                  class="schedule-list">
 
-                  <div
-                    *ngIf="upcomingSchedule.length > 0; else noUpcomingSchedule"
-                    class="schedule-list">
+                  <article
+                    class="schedule-item upcoming-schedule-item"
+                    *ngFor="let booking of upcomingSchedule">
 
-                    <article
-                      class="schedule-item upcoming-schedule-item"
-                      *ngFor="let booking of upcomingSchedule">
-
-                      <div class="schedule-date-badge">
-                        <strong>
-                          {{ booking.pickupDate | date:'dd' }}
-                        </strong>
-                        <span>
-                          {{ booking.pickupDate | date:'MMM' }}
-                        </span>
-                      </div>
-
-                      <div class="schedule-item-main">
-                        <strong>{{ booking.customerName }}</strong>
-                        <span>{{ booking.bookingNumber }}</span>
-                      </div>
-
-                      <div class="schedule-item-details">
-                        <span>
-                          {{ booking.totalWeight || 0 }} kg
-                        </span>
-
-                        <span
-                          class="booking-status"
-                          [class.status-pending]="booking.status === 'Pending'"
-                          [class.status-progress]="booking.status === 'In Progress'"
-                          [class.status-done]="booking.status === 'Done'">
-
-                          {{ booking.status }}
-                        </span>
-                      </div>
-
-                    </article>
-
-                  </div>
-
-                  <ng-template #noUpcomingSchedule>
-                    <div class="dashboard-empty-state schedule-empty-state">
-                      <span class="empty-state-icon">▦</span>
-                      <strong>No upcoming pickups</strong>
-                      <p>
-                        There are no pickups scheduled for the {{ upcomingScheduleLabel.toLowerCase() }}.
-                      </p>
+                    <div class="schedule-date-badge">
+                      <strong>{{ booking.pickupDate | date:'dd' }}</strong>
+                      <span>{{ booking.pickupDate | date:'MMM' }}</span>
                     </div>
-                  </ng-template>
 
-                </section>
+                    <div class="schedule-item-main">
+                      <strong>{{ booking.customerName }}</strong>
+                      <span>{{ booking.bookingNumber }}</span>
+                    </div>
 
-              </div>
+                    <div class="schedule-item-details">
+                      <span>{{ booking.totalWeight || 0 }} kg</span>
 
-            </ng-container>
+                      <span
+                        class="booking-status"
+                        [class.status-pending]="booking.status === 'Pending'"
+                        [class.status-progress]="booking.status === 'In Progress'"
+                        [class.status-done]="booking.status === 'Done'">
+                        {{ booking.status }}
+                      </span>
+                    </div>
 
-          </section>
+                  </article>
+
+                </div>
+
+                <ng-template #noUpcomingSchedule>
+                  <div class="dashboard-empty-state schedule-empty-state">
+                    <span class="empty-state-icon">▦</span>
+                    <strong>No upcoming pickups</strong>
+                    <p>
+                      There are no pickups scheduled for the {{ upcomingScheduleLabel.toLowerCase() }}.
+                    </p>
+                  </div>
+                </ng-template>
+
+              </section>
+
+            </div>
+
+          </ng-container>
+
+        </section>
 
         <!-- BOOKING MANAGEMENT -->
         <app-customer
@@ -576,11 +590,330 @@
           *ngSwitchCase="'reports'">
         </app-reports>
 
-        <!-- SETTINGS -->
+        <!-- SHOP SETTINGS -->
         <section *ngSwitchCase="'settings'" class="settings-page">
-          <h2>Shop Settings</h2>
-          <p>Manage your laundry shop information, service rates, and operating rules.</p>
+
+          <div class="settings-header">
+            <div>
+              <span class="dashboard-eyebrow">CONFIGURATION</span>
+              <h2>Shop Settings</h2>
+              <p>
+                Manage your laundry shop's operating hours, booking limits,
+                express service, and booking policies.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              class="dashboard-refresh-button"
+              (click)="resetShopSettings()"
+              [disabled]="isLoadingShopSettings || isSavingShopSettings">
+              ↻ Reload Settings
+            </button>
+          </div>
+
+          <!-- Loading -->
+          <div
+            *ngIf="isLoadingShopSettings"
+            class="dashboard-message">
+            Loading shop settings...
+          </div>
+
+          <!-- Error -->
+          <div
+            *ngIf="shopSettingsError"
+            class="dashboard-error"
+            role="alert">
+            {{ shopSettingsError }}
+          </div>
+
+          <!-- Success -->
+          <div
+            *ngIf="shopSettingsSuccess"
+            class="settings-success"
+            role="status">
+            ✓ {{ shopSettingsSuccess }}
+          </div>
+
+          <ng-container *ngIf="shopSettings && !isLoadingShopSettings">
+
+            <form
+              class="shop-settings-form"
+              (ngSubmit)="saveShopSettings()">
+
+              <!-- OPERATING HOURS -->
+              <section class="dashboard-card settings-card">
+
+                <div class="dashboard-card-heading">
+                  <div>
+                    <span class="dashboard-eyebrow">SHOP SCHEDULE</span>
+                    <h3>Operating Hours</h3>
+                    <p>Set the time your laundry shop opens and closes.</p>
+                  </div>
+                  <span class="dashboard-heading-icon">◷</span>
+                </div>
+
+                <div class="settings-fields-grid">
+
+                  <div class="estimator-field">
+                    <label for="opening-time">Opening Time</label>
+                    <input
+                      id="opening-time"
+                      name="openingTime"
+                      type="time"
+                      [(ngModel)]="shopSettings.openingTime"
+                      required>
+                  </div>
+
+                  <div class="estimator-field">
+                    <label for="closing-time">Closing Time</label>
+                    <input
+                      id="closing-time"
+                      name="closingTime"
+                      type="time"
+                      [(ngModel)]="shopSettings.closingTime"
+                      required>
+                  </div>
+
+                </div>
+
+                <div class="settings-operating-days">
+                  <h4>Operating Days</h4>
+                  <p>Select the days when your shop accepts bookings.</p>
+
+                  <div class="settings-days-grid">
+
+                    <label
+                      class="settings-day-option"
+                      *ngFor="let day of operatingDayOptions">
+
+                      <input
+                        type="checkbox"
+                        [checked]="isOperatingDay(day)"
+                        (change)="toggleOperatingDay(day, $event)">
+
+                      <span>{{ day }}</span>
+
+                    </label>
+
+                  </div>
+
+                  <div class="settings-closed-days">
+                    <strong>Closed Days:</strong>
+                    <span *ngIf="shopSettings.closedDays.length === 0">
+                      None
+                    </span>
+                    <span *ngIf="shopSettings.closedDays.length > 0">
+                      {{ shopSettings.closedDays.join(', ') }}
+                    </span>
+                  </div>
+                </div>
+
+              </section>
+
+              <!-- WEIGHT AND CAPACITY -->
+              <section class="dashboard-card settings-card">
+
+                <div class="dashboard-card-heading">
+                  <div>
+                    <span class="dashboard-eyebrow">BOOKING LIMITS</span>
+                    <h3>Weight Restrictions & Capacity</h3>
+                    <p>Control the allowed laundry weight and daily booking volume.</p>
+                  </div>
+                  <span class="dashboard-heading-icon">⚖</span>
+                </div>
+
+                <div class="settings-fields-grid">
+
+                  <div class="estimator-field">
+                    <label for="minimum-weight">Minimum Weight (kg)</label>
+                    <input
+                      id="minimum-weight"
+                      name="minimumWeight"
+                      type="number"
+                      min="0.1"
+                      step="0.1"
+                      [(ngModel)]="shopSettings.minimumWeight"
+                      required>
+                    <small>Lowest accepted laundry weight.</small>
+                  </div>
+
+                  <div class="estimator-field">
+                    <label for="maximum-weight">Maximum Weight (kg)</label>
+                    <input
+                      id="maximum-weight"
+                      name="maximumWeight"
+                      type="number"
+                      min="0.1"
+                      step="0.1"
+                      [(ngModel)]="shopSettings.maximumWeight"
+                      required>
+                    <small>Highest accepted laundry weight.</small>
+                  </div>
+
+                  <div class="estimator-field">
+                    <label for="daily-capacity">Maximum Daily Booking Capacity</label>
+                    <input
+                      id="daily-capacity"
+                      name="maximumDailyBookingCapacity"
+                      type="number"
+                      min="1"
+                      step="1"
+                      [(ngModel)]="shopSettings.maximumDailyBookingCapacity"
+                      required>
+                    <small>Maximum bookings accepted per day.</small>
+                  </div>
+
+                </div>
+
+              </section>
+
+              <!-- EXPRESS SERVICE -->
+              <section class="dashboard-card settings-card">
+
+                <div class="dashboard-card-heading">
+                  <div>
+                    <span class="dashboard-eyebrow">SERVICE OPTIONS</span>
+                    <h3>Express Service</h3>
+                    <p>Control express laundry availability and its price multiplier.</p>
+                  </div>
+                  <span class="dashboard-heading-icon">⚡</span>
+                </div>
+
+                <label class="settings-toggle-option">
+                  <span>
+                    <strong>Enable Express Service</strong>
+                    <small>
+                      Allow customers and staff to select express service.
+                    </small>
+                  </span>
+
+                  <input
+                    type="checkbox"
+                    name="expressEnabled"
+                    [(ngModel)]="shopSettings.expressEnabled">
+                </label>
+
+                <div class="settings-fields-grid">
+
+                  <div class="estimator-field">
+                    <label for="express-multiplier">
+                      Express Price Multiplier
+                    </label>
+
+                    <input
+                      id="express-multiplier"
+                      name="expressMultiplier"
+                      type="number"
+                      min="1"
+                      step="0.1"
+                      [(ngModel)]="shopSettings.expressMultiplier"
+                      [disabled]="!shopSettings.expressEnabled"
+                      required>
+
+                    <small>
+                      Example: 2 means express service costs twice the regular price.
+                    </small>
+                  </div>
+
+                </div>
+
+              </section>
+
+              <!-- BOOKING POLICIES -->
+              <section class="dashboard-card settings-card">
+
+                <div class="dashboard-card-heading">
+                  <div>
+                    <span class="dashboard-eyebrow">BOOKING RULES</span>
+                    <h3>Booking Policies</h3>
+                    <p>Choose which booking actions are allowed in your shop.</p>
+                  </div>
+                  <span class="dashboard-heading-icon">▤</span>
+                </div>
+
+                <div class="settings-policy-list">
+
+                  <label class="settings-toggle-option">
+                    <span>
+                      <strong>Allow Same-Day Booking</strong>
+                      <small>
+                        Allow bookings to be created for the current date.
+                      </small>
+                    </span>
+
+                    <input
+                      type="checkbox"
+                      name="allowSameDayBooking"
+                      [(ngModel)]="shopSettings.allowSameDayBooking">
+                  </label>
+
+                  <label class="settings-toggle-option">
+                    <span>
+                      <strong>Allow Booking Cancellation</strong>
+                      <small>
+                        Allow eligible bookings to be cancelled.
+                      </small>
+                    </span>
+
+                    <input
+                      type="checkbox"
+                      name="allowCancellation"
+                      [(ngModel)]="shopSettings.allowCancellation">
+                  </label>
+
+                  <label class="settings-toggle-option">
+                    <span>
+                      <strong>Prevent Past-Date Bookings</strong>
+                      <small>
+                        Prevent users from selecting dates before today.
+                      </small>
+                    </span>
+
+                    <input
+                      type="checkbox"
+                      name="preventPastBookings"
+                      [(ngModel)]="shopSettings.preventPastBookings">
+                  </label>
+
+                </div>
+
+              </section>
+
+              <!-- FORM ACTIONS -->
+              <div class="settings-actions">
+
+                <button
+                  type="button"
+                  class="dashboard-refresh-button"
+                  (click)="resetShopSettings()"
+                  [disabled]="isSavingShopSettings || isLoadingShopSettings">
+                  Discard Changes
+                </button>
+
+                <button
+                  type="submit"
+                  class="settings-save-button"
+                  [disabled]="isSavingShopSettings || isLoadingShopSettings">
+
+                  <span *ngIf="!isSavingShopSettings">
+                    Save Changes
+                  </span>
+
+                  <span *ngIf="isSavingShopSettings">
+                    Saving...
+                  </span>
+
+                </button>
+
+              </div>
+
+            </form>
+
+          </ng-container>
+
         </section>
+
       </ng-container>
 
     </div>
@@ -588,6 +921,5 @@
   </main>
 
 </div>
-
 
 }

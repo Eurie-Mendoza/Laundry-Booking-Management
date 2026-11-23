@@ -7,14 +7,17 @@
 
 .login-page {
   display: flex;
+  width: 100%;
   min-height: 100vh;
   background: #f4f6f8;
+  overflow: hidden;
 }
 
+/* LEFT LOGIN PANEL */
 .login-left {
   width: 50%;
   min-height: 100vh;
-  background: #d1d5db;
+  background: #0e7490;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -29,7 +32,7 @@
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 2px;
-  color: #64748b;
+  color: #cffafe;
 }
 
 .login-content {
@@ -124,34 +127,61 @@
   color: white;
 }
 
+/* RIGHT BRAND PANEL */
 .login-right {
-  width: 50%;
+  width: 80%;
   min-height: 100vh;
+  height: 100vh;
+  box-sizing: border-box;
   display: flex;
   justify-content: center;
   align-items: center;
   padding: 50px;
-  background: #0e7490;
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
   color: white;
   text-align: center;
 }
 
-.brand-content {
-  max-width: 470px;
+/* FULL-PANEL BRAND IMAGE */
+.brand-icon {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: -1;
+  pointer-events: none;
+  overflow: hidden;
 }
 
-.brand-icon {
-  width: 85px;
-  height: 85px;
-  border-radius: 25px;
-  display: grid;
-  place-items: center;
-  margin: 0 auto 25px;
-  background: #ffffff20;
-  border: 1px solid #ffffff40;
-  font-family: 'Poppins', sans-serif;
-  font-size: 44px;
-  font-weight: 800;
+.brand-icon img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  object-position: center;
+  opacity: 1;
+  user-select: none;
+}
+
+/* OPTIONAL DARK OVERLAY FOR TEXT READABILITY */
+.login-right::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.30);
+  z-index: -1;
+  pointer-events: none;
+}
+
+.brand-content {
+  max-width: 470px;
+  position: relative;
+  z-index: 1;
 }
 
 .brand-content h1 {
@@ -181,15 +211,18 @@
   font-weight: 800;
 }
 
+/* RESPONSIVE DESIGN */
 @media (max-width: 768px) {
   .login-page {
     flex-direction: column;
+    overflow: visible;
   }
 
   .login-left,
   .login-right {
     width: 100%;
     min-height: auto;
+    height: auto;
   }
 
   .login-left {
@@ -198,6 +231,7 @@
 
   .login-right {
     padding: 55px 25px;
+    min-height: 400px;
   }
 
   .brand-content h1 {

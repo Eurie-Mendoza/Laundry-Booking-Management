@@ -7,6 +7,7 @@ import {
   ChangeDetectorRef
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { forkJoin } from 'rxjs';
 
 import { BookingService } from '../services/booking.service';
 
@@ -17,14 +18,15 @@ import {
 } from '../customer';
 
 import {
+  Customer,
   CustomerBooking,
   BookingItem,
   BookingStatus,
   PaymentMethod,
   PaymentStatus,
-  BOOKING_STATUS_OPTIONS,
-  PAYMENT_METHOD_OPTIONS,
-  PAYMENT_STATUS_OPTIONS
+  BookingStatusOption,
+  PaymentMethodOption,
+  PaymentStatusOption
 } from '../rules';
 
 @Component({
@@ -42,24 +44,33 @@ export class CustomerComponent implements OnInit {
 
   @Input() initialView: 'records' | 'customers' = 'records';
 
-  readonly bookingStatusOptions = BOOKING_STATUS_OPTIONS;
-  readonly paymentMethodOptions = PAYMENT_METHOD_OPTIONS;
-  readonly paymentStatusOptions = PAYMENT_STATUS_OPTIONS;
+  // Options retrieved from db.json.
+  bookingStatusOptions: BookingStatusOption[] = [];
+  paymentMethodOptions: PaymentMethodOption[] = [];
+  paymentStatusOptions: PaymentStatusOption[] = [];
 
-  readonly minimumWeight = this.customerService.minimumWeight;
-  readonly maximumWeight = this.customerService.maximumWeight;
-  readonly expressMultiplier = this.customerService.expressMultiplier;
-  readonly maximumCapacity = this.customerService.maximumCapacity;
+  // Shop settings retrieved from db.json.
+  minimumWeight = 0;
+  maximumWeight = 0;
+  expressMultiplier = 1;
+  maximumCapacity = 0;
+  expressEnabled = false;
+  allowCancellation = false;
 
-  readonly services = this.customerService.services;
-  readonly categories = this.customerService.categories;
+  // Configuration data.
+  services = this.customerService.services;
+  categories = this.customerService.categories;
 
+  // Database records.
   bookings: BookingRecord[] = [];
+  customers: Customer[] = [];
 
   isLoading = false;
+  isLoadingCustomers = false;
   isSaving = false;
   isUpdatingPayment = false;
   isCancellingBooking = false;
+  isConfigurationLoading = true;
 
   isEditingBooking = false;
   editingBookingId: string | null = null;
@@ -73,7 +84,7 @@ export class CustomerComponent implements OnInit {
   successMessage = '';
 
   selectedBooking: BookingRecord | null = null;
-  selectedCustomer: BookingRecord | null = null;
+  selectedCustomer: Customer | null = null;
 
   showBookingDetails = false;
   showCustomerDetails = false;
@@ -102,6 +113,10 @@ export class CustomerComponent implements OnInit {
 
   form = this.createEmptyForm();
 
+  // --------------------------------------------------
+  // FORM INITIALIZATION
+  // --------------------------------------------------
+
   private createEmptyForm() {
     return {
       customerName: '',
@@ -116,17 +131,191 @@ export class CustomerComponent implements OnInit {
       notes: '',
       items: [
         {
-          serviceId: 1,
-          itemCategoryId: 1,
+          serviceId: this.services[0]?.id ?? 0,
+          itemCategoryId: this.categories[0]?.id ?? 0,
           weight: 0
         }
       ] as BookingFormItem[]
     };
   }
 
+  // --------------------------------------------------
+  // INITIALIZATION
+  // --------------------------------------------------
+
   ngOnInit(): void {
     this.subView = this.initialView;
+
+    this.loadConfiguration();
     this.loadBookings();
+    this.loadCustomers();
+  }
+
+  // --------------------------------------------------
+  // LOAD CONFIGURATION FROM DB.JSON
+  // --------------------------------------------------
+
+  loadConfiguration(): void {
+    this.isConfigurationLoading = true;
+    this.errorMessage = '';
+
+    forkJoin({
+      services: this.customerService.getServices(),
+      categories: this.customerService.getCategories(),
+      shopRules: this.customerService.getShopRules(),
+      bookingStatuses: this.customerService.getBookingStatuses(),
+      paymentStatuses: this.customerService.getPaymentStatuses(),
+      paymentMethods: this.customerService.getPaymentMethods()
+    }).subscribe({
+      next: data => {
+
+        this.services = data.services.filter(
+          service => service.isAvailable
+        );
+
+        this.categories = data.categories.filter(
+          category => category.isAvailable
+        );
+
+        this.bookingStatusOptions = data.bookingStatuses.filter(
+          status => status.isActive
+        );
+
+        this.paymentStatusOptions = data.paymentStatuses.filter(
+          status => status.isActive
+        );
+
+        this.paymentMethodOptions = data.paymentMethods.filter(
+          method => method.isActive
+        );
+
+        this.customerService.services = this.services;
+        this.customerService.categories = this.categories;
+        this.customerService.bookingStatuses = this.bookingStatusOptions;
+        this.customerService.paymentStatuses = this.paymentStatusOptions;
+        this.customerService.paymentMethods = this.paymentMethodOptions;
+
+        const rules = data.shopRules[0];
+
+        if (rules) {
+          this.customerService.applyShopRules(rules);
+
+          this.minimumWeight =
+            this.customerService.minimumWeight;
+
+          this.maximumWeight =
+            this.customerService.maximumWeight;
+
+          this.expressMultiplier =
+            this.customerService.expressMultiplier;
+
+          this.maximumCapacity =
+            this.customerService.maximumCapacity;
+
+          this.expressEnabled =
+            this.customerService.expressEnabled;
+
+          this.allowCancellation =
+            this.customerService.allowCancellation;
+        } else {
+          this.errorMessage =
+            'No shop rules were found in db.json.';
+        }
+
+        if (!this.expressEnabled) {
+          this.form.isExpress = false;
+        }
+
+        const firstService = this.services[0];
+        const firstCategory = this.categories[0];
+
+        if (
+          firstService &&
+          firstCategory &&
+          !this.isEditingBooking
+        ) {
+          this.form.items = this.form.items.map(item => ({
+            ...item,
+            serviceId: firstService.id,
+            itemCategoryId: firstCategory.id
+          }));
+        }
+
+        if (!this.isEditingBooking) {
+          this.form.bookingDate = this.getNextValidDate();
+        }
+
+        this.isConfigurationLoading = false;
+
+        this.cdr.markForCheck();
+
+        console.log('Shop configuration loaded:', data);
+      },
+
+      error: error => {
+        console.error(
+          'Unable to load shop configuration:',
+          error
+        );
+
+        this.isConfigurationLoading = false;
+
+        this.errorMessage =
+          'Unable to load shop settings. Please check JSON Server and your db.json data.';
+
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  // --------------------------------------------------
+  // CUSTOMER DATA
+  // --------------------------------------------------
+
+  loadCustomers(): void {
+    this.isLoadingCustomers = true;
+
+    this.customerService.getCustomers().subscribe({
+      next: data => {
+        this.customers = data;
+
+        // Keep the service's customer collection synchronized.
+        this.customerService.customers = data;
+
+        this.isLoadingCustomers = false;
+        this.cdr.markForCheck();
+
+        console.log(
+          'Customers loaded successfully:',
+          this.customers
+        );
+      },
+
+      error: error => {
+        console.error(
+          'Unable to load customers:',
+          error
+        );
+
+        this.isLoadingCustomers = false;
+
+        this.errorMessage =
+          'Unable to load customer records. Make sure JSON Server is running and the customers collection exists in db.json.';
+
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  // --------------------------------------------------
+  // CUSTOMER NAME MATCHING
+  // --------------------------------------------------
+
+  private normalizeCustomerName(name: string): string {
+    return String(name || '')
+      .trim()
+      .replace(/\s+/g, ' ')
+      .toLowerCase();
   }
 
   // --------------------------------------------------
@@ -164,7 +353,10 @@ export class CustomerComponent implements OnInit {
         this.isLoading = false;
         this.cdr.markForCheck();
 
-        console.log('Bookings loaded successfully:', this.bookings);
+        console.log(
+          'Bookings loaded successfully:',
+          this.bookings
+        );
       },
 
       error: error => {
@@ -196,9 +388,8 @@ export class CustomerComponent implements OnInit {
       this.selectedBooking = normalized;
     }
 
-    if (this.selectedCustomer?.id === normalized.id) {
-      this.selectedCustomer = normalized;
-    }
+    // Customer IDs and booking IDs are different identifiers.
+    // Do not compare them or replace the selected customer here.
 
     if (this.receiptBooking?.id === normalized.id) {
       this.receiptBooking = normalized;
@@ -215,6 +406,10 @@ export class CustomerComponent implements OnInit {
     this.subView = view;
     this.errorMessage = '';
     this.successMessage = '';
+
+    if (view === 'customers') {
+      this.loadCustomers();
+    }
 
     if (view === 'add') {
       this.resetForm();
@@ -273,7 +468,9 @@ export class CustomerComponent implements OnInit {
     return this.customerService.getPickupDateBookingCount(
       this.bookings,
       this.form.pickupDate,
-      this.isEditingBooking ? this.editingBookingId || undefined : undefined
+      this.isEditingBooking
+        ? this.editingBookingId || undefined
+        : undefined
     );
   }
 
@@ -281,7 +478,9 @@ export class CustomerComponent implements OnInit {
     return this.customerService.getRemainingPickupSlots(
       this.bookings,
       this.form.pickupDate,
-      this.isEditingBooking ? this.editingBookingId || undefined : undefined
+      this.isEditingBooking
+        ? this.editingBookingId || undefined
+        : undefined
     );
   }
 
@@ -305,7 +504,9 @@ export class CustomerComponent implements OnInit {
     const result = this.customerService.validatePickupCapacity(
       this.bookings,
       this.form.pickupDate,
-      this.isEditingBooking ? this.editingBookingId || undefined : undefined
+      this.isEditingBooking
+        ? this.editingBookingId || undefined
+        : undefined
     );
 
     return result.message;
@@ -356,7 +557,11 @@ export class CustomerComponent implements OnInit {
       this.form.items.length > 0 &&
       this.form.items.every(item =>
         Number(item.weight) > 0 &&
-        this.getServicePrice(item.serviceId) > 0
+        this.getServicePrice(item.serviceId) > 0 &&
+        this.categories.some(
+          category =>
+            category.id === Number(item.itemCategoryId)
+        )
       )
     );
   }
@@ -372,6 +577,11 @@ export class CustomerComponent implements OnInit {
     const paid = Number(this.form.amountPaid || 0);
 
     return (
+      !this.isConfigurationLoading &&
+      this.services.length > 0 &&
+      this.categories.length > 0 &&
+      this.bookingStatusOptions.length > 0 &&
+      this.paymentStatusOptions.length > 0 &&
       this.form.customerName.trim().length >= 2 &&
       !this.phoneError &&
       !this.emailError &&
@@ -388,6 +598,7 @@ export class CustomerComponent implements OnInit {
       Number.isFinite(paid) &&
       paid >= 0 &&
       paid <= this.grandTotal &&
+      (!this.form.isExpress || this.expressEnabled) &&
       (
         paid === 0 ||
         this.form.paymentMethod !== ''
@@ -405,8 +616,8 @@ export class CustomerComponent implements OnInit {
 
   addItemRow(): void {
     this.form.items.push({
-      serviceId: 1,
-      itemCategoryId: 1,
+      serviceId: this.services[0]?.id ?? 0,
+      itemCategoryId: this.categories[0]?.id ?? 0,
       weight: 0
     });
   }
@@ -442,7 +653,9 @@ export class CustomerComponent implements OnInit {
   validateBookingDate(
     dateValue: string
   ): { valid: boolean; message: string } {
-    return this.customerService.validateBookingDate(dateValue);
+    return this.customerService.validateBookingDate(
+      dateValue
+    );
   }
 
   validatePickupDate(
@@ -462,6 +675,99 @@ export class CustomerComponent implements OnInit {
   }
 
   // --------------------------------------------------
+  // SAVE OR UPDATE CUSTOMER PROFILE
+  // --------------------------------------------------
+
+  private saveCustomerProfile(
+    booking: CustomerBooking,
+    onSuccess: () => void
+  ): void {
+    this.customerService.getCustomers().subscribe({
+      next: customers => {
+        this.customers = customers;
+        this.customerService.customers = customers;
+
+        const existingCustomer =
+          this.customerService.findCustomerByName(
+            booking.customerName,
+            customers
+          );
+
+        const customer: Customer = {
+          id: existingCustomer?.id ?? `CUS-${Date.now()}`,
+          customerName: booking.customerName.trim(),
+          phoneNumber: booking.phoneNumber.trim(),
+          email: booking.email?.trim() || '',
+          address: booking.address.trim()
+        };
+
+        const request = existingCustomer
+          ? this.customerService.updateCustomer(
+              existingCustomer.id,
+              customer
+            )
+          : this.customerService.addCustomer(customer);
+
+        request.subscribe({
+          next: savedCustomer => {
+            if (existingCustomer) {
+              this.customers = customers.map(existing =>
+                existing.id === savedCustomer.id
+                  ? savedCustomer
+                  : existing
+              );
+            } else {
+              this.customers = [
+                ...customers,
+                savedCustomer
+              ];
+            }
+
+            this.customerService.customers = this.customers;
+
+            this.isLoadingCustomers = false;
+
+            console.log(
+              'Customer profile saved:',
+              savedCustomer
+            );
+
+            this.cdr.markForCheck();
+
+            onSuccess();
+          },
+
+          error: error => {
+            console.error(
+              'Unable to save customer profile:',
+              error
+            );
+
+            this.isSaving = false;
+            this.errorMessage =
+              'Unable to save the customer profile. The booking was not submitted.';
+
+            this.cdr.markForCheck();
+          }
+        });
+      },
+
+      error: error => {
+        console.error(
+          'Unable to retrieve customer records:',
+          error
+        );
+
+        this.isSaving = false;
+        this.errorMessage =
+          'Unable to retrieve customer records. Please try again.';
+
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  // --------------------------------------------------
   // CREATE OR UPDATE BOOKING
   // --------------------------------------------------
 
@@ -470,7 +776,7 @@ export class CustomerComponent implements OnInit {
   }
 
   submitBooking(): void {
-    if (this.isSaving) {
+    if (this.isSaving || this.isConfigurationLoading) {
       return;
     }
 
@@ -484,12 +790,26 @@ export class CustomerComponent implements OnInit {
       return;
     }
 
-    // Recheck capacity immediately before saving.
-    const capacityCheck = this.customerService.validatePickupCapacity(
-      this.bookings,
-      this.form.pickupDate,
-      this.isEditingBooking ? this.editingBookingId || undefined : undefined
+    const pendingStatus = this.bookingStatusOptions.find(
+      status =>
+        status.name.toLowerCase() === 'pending' ||
+        status.code.toLowerCase() === 'pending'
     );
+
+    if (!pendingStatus && !this.isEditingBooking) {
+      this.errorMessage =
+        'The Pending booking status is missing from db.json.';
+      return;
+    }
+
+    const capacityCheck =
+      this.customerService.validatePickupCapacity(
+        this.bookings,
+        this.form.pickupDate,
+        this.isEditingBooking
+          ? this.editingBookingId || undefined
+          : undefined
+      );
 
     if (!capacityCheck.valid) {
       this.errorMessage = capacityCheck.message;
@@ -560,7 +880,7 @@ export class CustomerComponent implements OnInit {
       paymentStatus: this.currentPaymentStatus,
       paymentMethod: this.form.paymentMethod,
 
-      status: 'Pending' as BookingStatus,
+      status: (pendingStatus?.name || '') as BookingStatus,
       notes: this.form.notes.trim(),
 
       createdAt: now,
@@ -594,35 +914,37 @@ export class CustomerComponent implements OnInit {
         cancellationReason: existing.cancellationReason
       } as CustomerBooking;
 
-      this.bookingService.updateBooking(
-        existing.id,
-        updatedBooking
-      ).subscribe({
-        next: saved => {
-          this.replaceBooking(saved);
+      this.saveCustomerProfile(updatedBooking, () => {
+        this.bookingService.updateBooking(
+          existing.id,
+          updatedBooking
+        ).subscribe({
+          next: saved => {
+            this.replaceBooking(saved);
 
-          this.isSaving = false;
-          this.isEditingBooking = false;
-          this.editingBookingId = null;
+            this.isSaving = false;
+            this.isEditingBooking = false;
+            this.editingBookingId = null;
 
-          this.form = this.createEmptyForm();
-          this.subView = 'records';
+            this.form = this.createEmptyForm();
+            this.subView = 'records';
 
-          this.successMessage =
-            `Booking ${saved.bookingNumber} has been updated successfully.`;
+            this.successMessage =
+              `Booking ${saved.bookingNumber} has been updated successfully.`;
 
-          this.cdr.markForCheck();
-        },
+            this.cdr.markForCheck();
+          },
 
-        error: error => {
-          console.error('Unable to update booking:', error);
+          error: error => {
+            console.error('Unable to update booking:', error);
 
-          this.isSaving = false;
-          this.errorMessage =
-            'Unable to update booking. Please try again.';
+            this.isSaving = false;
+            this.errorMessage =
+              'Unable to update booking. Please try again.';
 
-          this.cdr.markForCheck();
-        }
+            this.cdr.markForCheck();
+          }
+        });
       });
 
       return;
@@ -632,29 +954,33 @@ export class CustomerComponent implements OnInit {
     // CREATE NEW BOOKING
     // --------------------------------------------------
 
-    this.bookingService.addBooking(booking).subscribe({
-      next: saved => {
-        this.bookings.unshift(this.normalizeBooking(saved));
+    this.saveCustomerProfile(booking, () => {
+      this.bookingService.addBooking(booking).subscribe({
+        next: saved => {
+          this.bookings.unshift(
+            this.normalizeBooking(saved)
+          );
 
-        this.isSaving = false;
-        this.form = this.createEmptyForm();
-        this.subView = 'records';
+          this.isSaving = false;
+          this.form = this.createEmptyForm();
+          this.subView = 'records';
 
-        this.successMessage =
-          `Booking ${saved.bookingNumber} has been added successfully.`;
+          this.successMessage =
+            `Booking ${saved.bookingNumber} has been added successfully.`;
 
-        this.cdr.markForCheck();
-      },
+          this.cdr.markForCheck();
+        },
 
-      error: error => {
-        console.error('Unable to save booking:', error);
+        error: error => {
+          console.error('Unable to save booking:', error);
 
-        this.isSaving = false;
-        this.errorMessage =
-          'Unable to save booking. Please check your connection and make sure JSON Server is running.';
+          this.isSaving = false;
+          this.errorMessage =
+            'Unable to save booking. Please check your connection and make sure JSON Server is running.';
 
-        this.cdr.markForCheck();
-      }
+          this.cdr.markForCheck();
+        }
+      });
     });
   }
 
@@ -671,7 +997,9 @@ export class CustomerComponent implements OnInit {
   }
 
   getBookingServiceNames(booking: BookingRecord): string {
-    return this.customerService.getBookingServiceNames(booking);
+    return this.customerService.getBookingServiceNames(
+      booking
+    );
   }
 
   // --------------------------------------------------
@@ -682,6 +1010,16 @@ export class CustomerComponent implements OnInit {
     booking: BookingRecord,
     status: BookingStatus
   ): void {
+    const statusExists = this.bookingStatusOptions.some(
+      option => option.name === status
+    );
+
+    if (!statusExists) {
+      this.errorMessage =
+        'The selected booking status is not available.';
+      return;
+    }
+
     if (
       booking.status === 'Done' ||
       booking.status === 'Cancelled' ||
@@ -719,9 +1057,14 @@ export class CustomerComponent implements OnInit {
       },
 
       error: error => {
-        console.error('Unable to update booking status:', error);
+        console.error(
+          'Unable to update booking status:',
+          error
+        );
 
-        this.errorMessage = 'Unable to update booking status.';
+        this.errorMessage =
+          'Unable to update booking status.';
+
         this.cdr.markForCheck();
       }
     });
@@ -732,6 +1075,12 @@ export class CustomerComponent implements OnInit {
   // --------------------------------------------------
 
   openCancellationForm(): void {
+    if (!this.allowCancellation) {
+      this.errorMessage =
+        'Booking cancellation is currently disabled by the shop.';
+      return;
+    }
+
     if (
       !this.selectedBooking ||
       this.selectedBooking.status === 'Done' ||
@@ -755,7 +1104,16 @@ export class CustomerComponent implements OnInit {
   }
 
   cancelBooking(): void {
-    if (!this.selectedBooking || this.isCancellingBooking) {
+    if (
+      !this.selectedBooking ||
+      this.isCancellingBooking
+    ) {
+      return;
+    }
+
+    if (!this.allowCancellation) {
+      this.errorMessage =
+        'Booking cancellation is currently disabled by the shop.';
       return;
     }
 
@@ -767,8 +1125,24 @@ export class CustomerComponent implements OnInit {
       return;
     }
 
-    if (this.selectedBooking.status === 'Cancelled') {
-      this.errorMessage = 'This booking is already cancelled.';
+    if (
+      this.selectedBooking.status === 'Cancelled' ||
+      this.selectedBooking.status === 'Done'
+    ) {
+      this.errorMessage =
+        'This booking can no longer be cancelled.';
+      return;
+    }
+
+    const cancelledStatus = this.bookingStatusOptions.find(
+      status =>
+        status.name.toLowerCase() === 'cancelled' ||
+        status.code.toLowerCase() === 'cancelled'
+    );
+
+    if (!cancelledStatus) {
+      this.errorMessage =
+        'The Cancelled booking status is missing from db.json.';
       return;
     }
 
@@ -784,7 +1158,7 @@ export class CustomerComponent implements OnInit {
 
     const updated = {
       ...booking,
-      status: 'Cancelled' as BookingStatus,
+      status: cancelledStatus.name as BookingStatus,
       cancellationReason: reason,
       updatedAt: new Date().toISOString()
     } as CustomerBooking;
@@ -863,8 +1237,13 @@ export class CustomerComponent implements OnInit {
       return '';
     }
 
-    const amount = Number(this.paymentDraft.paymentAmount);
-    const balance = Number(this.selectedBooking.balance);
+    const amount = Number(
+      this.paymentDraft.paymentAmount
+    );
+
+    const balance = Number(
+      this.selectedBooking.balance
+    );
 
     if (
       this.paymentDraft.paymentAmount === null ||
@@ -887,49 +1266,88 @@ export class CustomerComponent implements OnInit {
       return 'Please select a payment method.';
     }
 
+    const methodExists = this.paymentMethodOptions.some(
+      method =>
+        method.name === this.paymentDraft.paymentMethod
+    );
+
+    if (!methodExists) {
+      return 'Please select a valid payment method.';
+    }
+
     return '';
   }
 
   savePaymentUpdate(): void {
-    if (!this.selectedBooking || this.isUpdatingPayment) {
+    if (
+      !this.selectedBooking ||
+      this.isUpdatingPayment
+    ) {
       return;
     }
 
     const booking = this.selectedBooking;
-    const newPayment = Number(this.paymentDraft.paymentAmount);
+    const newPayment = Number(
+      this.paymentDraft.paymentAmount
+    );
+
     const remainingBalance = Number(booking.balance);
 
     if (!Number.isFinite(newPayment) || newPayment <= 0) {
-      this.errorMessage = 'Enter a payment amount greater than zero.';
+      this.errorMessage =
+        'Enter a payment amount greater than zero.';
       return;
     }
 
     if (newPayment > remainingBalance) {
-      this.errorMessage = 'Payment cannot exceed the remaining balance.';
+      this.errorMessage =
+        'Payment cannot exceed the remaining balance.';
       return;
     }
 
     if (!this.paymentDraft.paymentMethod) {
-      this.errorMessage = 'Please select a payment method.';
+      this.errorMessage =
+        'Please select a payment method.';
+      return;
+    }
+
+    const methodExists = this.paymentMethodOptions.some(
+      method =>
+        method.name === this.paymentDraft.paymentMethod
+    );
+
+    if (!methodExists) {
+      this.errorMessage =
+        'Please select a valid payment method.';
       return;
     }
 
     const updatedAmountPaid =
       Number(booking.amountPaid) + newPayment;
 
-    const updatedBalance = this.customerService.getBalance(
-      Number(booking.totalAmount),
-      updatedAmountPaid
-    );
+    const updatedBalance =
+      this.customerService.getBalance(
+        Number(booking.totalAmount),
+        updatedAmountPaid
+      );
+
+    const updatedPaymentStatus =
+      this.getPaymentStatus(
+        updatedAmountPaid,
+        Number(booking.totalAmount)
+      );
+
+    if (!updatedPaymentStatus) {
+      this.errorMessage =
+        'Unable to determine the payment status. Check paymentStatuses in db.json.';
+      return;
+    }
 
     const updated = {
       ...booking,
       amountPaid: updatedAmountPaid,
       balance: updatedBalance,
-      paymentStatus: this.getPaymentStatus(
-        updatedAmountPaid,
-        Number(booking.totalAmount)
-      ),
+      paymentStatus: updatedPaymentStatus,
       paymentMethod: this.paymentDraft.paymentMethod,
       updatedAt: new Date().toISOString()
     } as CustomerBooking;
@@ -959,7 +1377,10 @@ export class CustomerComponent implements OnInit {
       },
 
       error: error => {
-        console.error('Unable to update payment:', error);
+        console.error(
+          'Unable to update payment:',
+          error
+        );
 
         this.isUpdatingPayment = false;
         this.errorMessage =
@@ -974,7 +1395,10 @@ export class CustomerComponent implements OnInit {
     paid: number,
     total: number
   ): PaymentStatus {
-    return this.customerService.getPaymentStatus(paid, total);
+    return this.customerService.getPaymentStatus(
+      paid,
+      total
+    );
   }
 
   // --------------------------------------------------
@@ -983,12 +1407,14 @@ export class CustomerComponent implements OnInit {
 
   editBooking(booking: BookingRecord): void {
     if (booking.status === 'Done') {
-      this.errorMessage = 'Completed bookings cannot be edited.';
+      this.errorMessage =
+        'Completed bookings cannot be edited.';
       return;
     }
 
     if (booking.status === 'Cancelled') {
-      this.errorMessage = 'Cancelled bookings cannot be edited.';
+      this.errorMessage =
+        'Cancelled bookings cannot be edited.';
       return;
     }
 
@@ -1002,7 +1428,7 @@ export class CustomerComponent implements OnInit {
       address: booking.address,
       bookingDate: booking.bookingDate,
       pickupDate: booking.pickupDate,
-      isExpress: booking.isExpress,
+      isExpress: booking.isExpress && this.expressEnabled,
       amountPaid: booking.amountPaid,
       paymentMethod: booking.paymentMethod || '',
       notes: booking.notes || '',
@@ -1027,34 +1453,60 @@ export class CustomerComponent implements OnInit {
   // CUSTOMER DIRECTORY
   // --------------------------------------------------
 
-  get uniqueCustomers(): BookingRecord[] {
-    return this.customerService.getUniqueCustomers(
-      this.bookings
+  get filteredCustomers(): Customer[] {
+    const query = this.searchQuery.trim().toLowerCase();
+
+    if (!query) {
+      return this.customers;
+    }
+
+    return this.customers.filter(customer => {
+      const searchableValues = [
+        customer.customerName,
+        customer.phoneNumber,
+        customer.email,
+        customer.address
+      ];
+
+      return searchableValues.some(value =>
+        String(value || '')
+          .toLowerCase()
+          .includes(query)
+      );
+    });
+  }
+
+  getCustomerBookingCount(customerName: string): number {
+    const normalizedName =
+      this.normalizeCustomerName(customerName);
+
+    if (!normalizedName) {
+      return 0;
+    }
+
+    return this.bookings.filter(booking =>
+      this.normalizeCustomerName(booking.customerName) ===
+      normalizedName
+    ).length;
+  }
+
+  getCustomerBookings(
+    customer: Customer
+  ): BookingRecord[] {
+    const normalizedName =
+      this.normalizeCustomerName(customer.customerName);
+
+    if (!normalizedName) {
+      return [];
+    }
+
+    return this.bookings.filter(booking =>
+      this.normalizeCustomerName(booking.customerName) ===
+      normalizedName
     );
   }
 
-  get filteredCustomers(): BookingRecord[] {
-    return this.customerService.filterCustomers(
-      this.uniqueCustomers,
-      this.searchQuery
-    );
-  }
-
-  getCustomerBookingCount(phoneNumber: string): number {
-    return this.customerService.getCustomerBookingCount(
-      this.bookings,
-      phoneNumber
-    );
-  }
-
-  getCustomerBookings(customer: BookingRecord): BookingRecord[] {
-    return this.customerService.getCustomerBookings(
-      this.bookings,
-      customer
-    );
-  }
-
-  openCustomerDetails(customer: BookingRecord): void {
+  openCustomerDetails(customer: Customer): void {
     this.selectedCustomer = customer;
     this.showCustomerDetails = true;
   }

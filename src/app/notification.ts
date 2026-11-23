@@ -1,15 +1,11 @@
-
 import { Injectable } from '@angular/core';
-import { CustomerBooking, BookingNotification } from './rules';
 
-export interface DashboardNotification {
-  title: string;
-  message: string;
-  bookingNumber: string;
-  date: string;
-  timestamp: number;
-  type: 'pending' | 'progress' | 'payment';
-}
+import { CustomerBooking } from './rules';
+
+import type {
+  BookingNotification,
+  DashboardNotification
+} from './rules';
 
 @Injectable({
   providedIn: 'root'
@@ -77,7 +73,8 @@ export class NotificationService {
       }
 
       if (booking.pickupDate) {
-        const [year, month, day] = booking.pickupDate.split('-').map(Number);
+        const [year, month, day] =
+          booking.pickupDate.split('-').map(Number);
 
         const pickup = new Date(year, month - 1, day);
         pickup.setHours(0, 0, 0, 0);
@@ -106,8 +103,10 @@ export class NotificationService {
       }
     }
 
+    // Sort notifications by date, newest first
     return alerts.sort(
-      (a, b) => new Date(a.date).getTime() - new Date(a.date).getTime()
+      (a, b) =>
+        new Date(b.date).getTime() - new Date(a.date).getTime()
     );
   }
 
@@ -152,8 +151,10 @@ export class NotificationService {
 
       const balance = Number(
         booking.balance ??
-        (Number(booking.totalAmount || 0) -
-          Number(booking.amountPaid || 0))
+        (
+          Number(booking.totalAmount || 0) -
+          Number(booking.amountPaid || 0)
+        )
       );
 
       if (

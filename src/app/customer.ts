@@ -1,11 +1,39 @@
-import { Injectable } from '@angular/core';
+
+import { Injectable, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
 
 import {
+  Customer,
   CustomerBooking,
   PaymentStatus,
   LaundryService,
-  ItemCategory
+  ItemCategory,
+  ShopRules,
+  BookingStatusOption,
+  PaymentStatusOption,
+  PaymentMethodOption
 } from './rules';
+
+// --------------------------------------------------
+// INTERFACES AND TYPES
+// --------------------------------------------------
+
+export interface Account {
+  id: string;
+  username: string;
+  password: string;
+  role: string;
+  isActive: boolean;
+}
+
+export interface ShopInformation {
+  id: string;
+  shopName: string;
+  logoPath: string;
+  projectName: string;
+  projectVersion: string;
+}
 
 export type BookingRecord = CustomerBooking & {
   subtotal: number;
@@ -26,112 +54,217 @@ export type CalendarCell = {
   dateKey: string;
 };
 
+// --------------------------------------------------
+// CUSTOMER SERVICE
+// --------------------------------------------------
+
 @Injectable({
   providedIn: 'root'
 })
 export class CustomerService {
+  private readonly http = inject(HttpClient);
+  private readonly apiUrl = 'http://localhost:3000';
+
+  minimumWeight = 0;
+  maximumWeight = 0;
+  expressMultiplier = 1;
+  maximumCapacity = 0;
+
+  expressEnabled = false;
+  allowSameDayBooking = false;
+  allowCancellation = false;
+  preventPastBookings = true;
+
+  openingTime = '';
+  closingTime = '';
+
+  operatingDays: string[] = [];
+  closedDays: string[] = [];
+
+  shopRules: ShopRules | null = null;
+
+  services: LaundryService[] = [];
+  categories: ItemCategory[] = [];
+  customers: Customer[] = [];
+
+  bookingStatuses: BookingStatusOption[] = [];
+  paymentStatuses: PaymentStatusOption[] = [];
+  paymentMethods: PaymentMethodOption[] = [];
 
   // --------------------------------------------------
-  // SHARED BOOKING SETTINGS
+  // ACCOUNT / LOGIN OPERATIONS
   // --------------------------------------------------
 
-  readonly minimumWeight = 3;
-  readonly maximumWeight = 20;
-  readonly expressMultiplier = 2;
-
-  // Maximum number of active bookings allowed per pickup date.
-  // Change this value to adjust the daily booking capacity.
-  readonly maximumCapacity = 20;
+  getAccounts(): Observable<Account[]> {
+    return this.http.get<Account[]>(
+      `${this.apiUrl}/accounts`
+    );
+  }
 
   // --------------------------------------------------
-  // LAUNDRY SERVICES
+  // SHOP INFORMATION
   // --------------------------------------------------
 
-  readonly services: LaundryService[] = [
-    {
-      id: 1,
-      serviceName: 'Wash & Fold',
-      description: '',
-      pricePerKg: 50,
-      isAvailable: true
-    },
-    {
-      id: 2,
-      serviceName: 'Dry Cleaning',
-      description: '',
-      pricePerKg: 120,
-      isAvailable: true
-    },
-    {
-      id: 3,
-      serviceName: 'Ironing',
-      description: '',
-      pricePerKg: 40,
-      isAvailable: true
-    },
-    {
-      id: 4,
-      serviceName: 'Comforter Wash',
-      description: '',
-      pricePerKg: 150,
-      isAvailable: true
-    }
-  ];
+  getShopInformation(): Observable<ShopInformation[]> {
+    return this.http.get<ShopInformation[]>(
+      `${this.apiUrl}/shopInformation`
+    );
+  }
 
   // --------------------------------------------------
-  // ITEM CATEGORIES
+  // CUSTOMER DATABASE OPERATIONS
   // --------------------------------------------------
 
-  readonly categories: ItemCategory[] = [
-    {
-      id: 1,
-      categoryName: 'Tops',
-      description: 'Shirts, blouses, and tops',
-      isAvailable: true
-    },
-    {
-      id: 2,
-      categoryName: 'Bottoms',
-      description: 'Pants, shorts, and skirts',
-      isAvailable: true
-    },
-    {
-      id: 3,
-      categoryName: 'Bedding',
-      description: 'Bedsheets, pillowcases, and blankets',
-      isAvailable: true
-    },
-    {
-      id: 4,
-      categoryName: 'Delicates',
-      description: 'Items requiring special care',
-      isAvailable: true
-    },
-    {
-      id: 5,
-      categoryName: 'Comforters',
-      description: 'Comforters and thick blankets',
-      isAvailable: true
-    }
-  ];
+  getCustomers(): Observable<Customer[]> {
+    return this.http.get<Customer[]>(
+      `${this.apiUrl}/customers`
+    );
+  }
+
+  getCustomer(id: string): Observable<Customer> {
+    return this.http.get<Customer>(
+      `${this.apiUrl}/customers/${encodeURIComponent(id)}`
+    );
+  }
+
+  addCustomer(customer: Customer): Observable<Customer> {
+    return this.http.post<Customer>(
+      `${this.apiUrl}/customers`,
+      customer
+    );
+  }
+
+  updateCustomer(
+    id: string,
+    customer: Customer
+  ): Observable<Customer> {
+    return this.http.put<Customer>(
+      `${this.apiUrl}/customers/${encodeURIComponent(id)}`,
+      customer
+    );
+  }
+
+  normalizePhoneNumber(phoneNumber: string): string {
+    return (phoneNumber || '').replace(/[\s\-()]/g, '');
+  }
+
+  normalizeCustomerName(customerName: string): string {
+    return (customerName || '').trim().toLowerCase();
+  }
+
+  findCustomerByName(
+    customerName: string,
+    customers: Customer[] = this.customers
+  ): Customer | undefined {
+    const normalizedName =
+      this.normalizeCustomerName(customerName);
+
+    if (!normalizedName) return undefined;
+
+    return customers.find(
+      customer =>
+        this.normalizeCustomerName(customer.customerName) ===
+        normalizedName
+    );
+  }
+
+  // --------------------------------------------------
+  // LOAD DATABASE CONFIGURATION
+  // --------------------------------------------------
+
+  getServices(): Observable<LaundryService[]> {
+    return this.http.get<LaundryService[]>(
+      `${this.apiUrl}/services`
+    );
+  }
+
+  getCategories(): Observable<ItemCategory[]> {
+    return this.http.get<ItemCategory[]>(
+      `${this.apiUrl}/itemCategories`
+    );
+  }
+
+  updateShopRules(
+    id: string,
+    rules: ShopRules
+  ): Observable<ShopRules> {
+    return this.http.put<ShopRules>(
+      `${this.apiUrl}/shopRules/${encodeURIComponent(id)}`,
+      rules
+    );
+  }
+
+  getShopRules(): Observable<ShopRules[]> {
+    return this.http.get<ShopRules[]>(
+      `${this.apiUrl}/shopRules`
+    );
+  }
+
+  getBookingStatuses(): Observable<BookingStatusOption[]> {
+    return this.http.get<BookingStatusOption[]>(
+      `${this.apiUrl}/bookingStatuses`
+    );
+  }
+
+  getPaymentStatuses(): Observable<PaymentStatusOption[]> {
+    return this.http.get<PaymentStatusOption[]>(
+      `${this.apiUrl}/paymentStatuses`
+    );
+  }
+
+  getPaymentMethods(): Observable<PaymentMethodOption[]> {
+    return this.http.get<PaymentMethodOption[]>(
+      `${this.apiUrl}/paymentMethods`
+    );
+  }
+
+  applyShopRules(rules: ShopRules): void {
+    this.shopRules = rules;
+
+    this.minimumWeight = Number(rules.minimumWeight);
+    this.maximumWeight = Number(rules.maximumWeight);
+
+    this.maximumCapacity = Number(
+      rules.maximumDailyBookingCapacity
+    );
+
+    this.expressEnabled = Boolean(rules.expressEnabled);
+    this.expressMultiplier = Number(rules.expressMultiplier);
+
+    this.allowSameDayBooking = Boolean(
+      rules.allowSameDayBooking
+    );
+
+    this.allowCancellation = Boolean(
+      rules.allowCancellation
+    );
+
+    this.preventPastBookings = Boolean(
+      rules.preventPastBookings
+    );
+
+    this.openingTime = rules.openingTime;
+    this.closingTime = rules.closingTime;
+
+    this.operatingDays = Array.isArray(rules.operatingDays)
+      ? rules.operatingDays
+      : [];
+
+    this.closedDays = Array.isArray(rules.closedDays)
+      ? rules.closedDays
+      : [];
+  }
 
   // --------------------------------------------------
   // PICKUP CAPACITY
   // --------------------------------------------------
 
-  /**
-   * Counts bookings assigned to a pickup date.
-   * Cancelled bookings do not occupy a slot.
-   * An optional booking ID can be excluded when editing.
-   */
   getPickupDateBookingCount(
     bookings: CustomerBooking[],
     pickupDate: string,
     excludeBookingId?: string
   ): number {
-    if (!pickupDate) {
-      return 0;
-    }
+    if (!pickupDate) return 0;
 
     return bookings.filter(booking =>
       booking.pickupDate === pickupDate &&
@@ -193,10 +326,7 @@ export class CustomerService {
       };
     }
 
-    return {
-      valid: true,
-      message: ''
-    };
+    return { valid: true, message: '' };
   }
 
   // --------------------------------------------------
@@ -204,8 +334,7 @@ export class CustomerService {
   // --------------------------------------------------
 
   validatePhoneNumber(phoneNumber: string): string {
-    const phone = (phoneNumber || '')
-      .replace(/[\s\-()]/g, '');
+    const phone = this.normalizePhoneNumber(phoneNumber);
 
     if (!phone) {
       return 'Contact number is required.';
@@ -224,12 +353,9 @@ export class CustomerService {
   validateEmail(emailValue: string): string {
     const email = (emailValue || '').trim();
 
-    if (!email) {
-      return '';
-    }
+    if (!email) return '';
 
-    const validEmail =
-      /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+    const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
     return validEmail.test(email)
       ? ''
@@ -271,7 +397,7 @@ export class CustomerService {
     baseSubtotal: number,
     isExpress: boolean
   ): number {
-    return isExpress
+    return isExpress && this.expressEnabled
       ? baseSubtotal * (this.expressMultiplier - 1)
       : 0;
   }
@@ -281,7 +407,9 @@ export class CustomerService {
     isExpress: boolean
   ): number {
     return baseSubtotal *
-      (isExpress ? this.expressMultiplier : 1);
+      (isExpress && this.expressEnabled
+        ? this.expressMultiplier
+        : 1);
   }
 
   getBalance(total: number, paid: number): number {
@@ -289,22 +417,29 @@ export class CustomerService {
   }
 
   // --------------------------------------------------
-  // PAYMENT LOGIC
+  // PAYMENT STATUS FROM DB.JSON
   // --------------------------------------------------
 
   getPaymentStatus(
     paid: number,
     total: number
   ): PaymentStatus {
+    let expectedName = '';
+
     if (paid <= 0) {
-      return 'Unpaid';
+      expectedName = 'Unpaid';
+    } else if (paid < total) {
+      expectedName = 'Partially Paid';
+    } else {
+      expectedName = 'Paid';
     }
 
-    if (paid < total) {
-      return 'Partially Paid';
-    }
+    const matchingStatus = this.paymentStatuses.find(
+      status =>
+        status.name.toLowerCase() === expectedName.toLowerCase()
+    );
 
-    return 'Paid';
+    return (matchingStatus?.name || '') as PaymentStatus;
   }
 
   // --------------------------------------------------
@@ -340,7 +475,8 @@ export class CustomerService {
       subtotal,
       servicePrice: subtotal,
       expressMultiplier: Number(
-        data.expressMultiplier || (data.isExpress ? 2 : 1)
+        data.expressMultiplier ||
+        (data.isExpress ? this.expressMultiplier : 1)
       ),
       totalAmount,
       amountPaid,
@@ -356,13 +492,40 @@ export class CustomerService {
   }
 
   // --------------------------------------------------
+  // DATE HELPERS
+  // --------------------------------------------------
+
+  private getDayName(date: Date): string {
+    return date.toLocaleDateString('en-US', {
+      weekday: 'long'
+    });
+  }
+
+  private isOperatingDay(date: Date): boolean {
+    const dayName = this.getDayName(date);
+
+    const isClosed = this.closedDays.some(
+      day => day.toLowerCase() === dayName.toLowerCase()
+    );
+
+    if (isClosed) return false;
+
+    if (this.operatingDays.length === 0) {
+      return true;
+    }
+
+    return this.operatingDays.some(
+      day => day.toLowerCase() === dayName.toLowerCase()
+    );
+  }
+
+  // --------------------------------------------------
   // DATE VALIDATION
   // --------------------------------------------------
 
   validateBookingDate(
     dateValue: string
   ): { valid: boolean; message: string } {
-
     if (!dateValue) {
       return {
         valid: false,
@@ -382,17 +545,27 @@ export class CustomerService {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    if (selected < today) {
+    if (this.preventPastBookings && selected < today) {
       return {
         valid: false,
         message: 'Past dates cannot be booked.'
       };
     }
 
-    if (selected.getDay() === 0) {
+    if (
+      !this.allowSameDayBooking &&
+      selected.getTime() === today.getTime()
+    ) {
       return {
         valid: false,
-        message: 'The shop is closed on Sundays. Please choose another day.'
+        message: 'Same-day bookings are not allowed. Please choose another date.'
+      };
+    }
+
+    if (!this.isOperatingDay(selected)) {
+      return {
+        valid: false,
+        message: 'The shop is closed on this day. Please choose an operating day.'
       };
     }
 
@@ -404,7 +577,6 @@ export class CustomerService {
     pickupDate: string,
     isExpress: boolean
   ): { valid: boolean; message: string } {
-
     if (!bookingDate || !pickupDate) {
       return {
         valid: false,
@@ -429,6 +601,13 @@ export class CustomerService {
       };
     }
 
+    if (!this.isOperatingDay(pickup)) {
+      return {
+        valid: false,
+        message: 'The shop is closed on the selected pickup date. Please choose an operating day.'
+      };
+    }
+
     if (!isExpress) {
       const minimumPickup = new Date(booking);
       minimumPickup.setDate(minimumPickup.getDate() + 7);
@@ -445,9 +624,7 @@ export class CustomerService {
   }
 
   private parseLocalDate(value: string): Date | null {
-    if (!value) {
-      return null;
-    }
+    if (!value) return null;
 
     const parts = value.split('-').map(Number);
 
@@ -477,7 +654,17 @@ export class CustomerService {
     const date = new Date();
     date.setHours(0, 0, 0, 0);
 
-    while (date.getDay() === 0) {
+    while (
+      !this.isOperatingDay(date) ||
+      (
+        !this.allowSameDayBooking &&
+        date.getTime() === new Date(
+          new Date().getFullYear(),
+          new Date().getMonth(),
+          new Date().getDate()
+        ).getTime()
+      )
+    ) {
       date.setDate(date.getDate() + 1);
     }
 
@@ -501,7 +688,6 @@ export class CustomerService {
     searchQuery: string,
     statusFilter: string
   ): BookingRecord[] {
-
     const query = searchQuery.toLowerCase().trim();
 
     return bookings.filter(booking => {
@@ -531,20 +717,20 @@ export class CustomerService {
   // CUSTOMER DIRECTORY AND HISTORY
   // --------------------------------------------------
 
+  // Booking-based customer directory.
+  // Customer name is used as the matching identifier.
+
   getUniqueCustomers(
     bookings: BookingRecord[]
   ): BookingRecord[] {
-
     const seen = new Set<string>();
 
     return bookings.filter(booking => {
-      const key = booking.phoneNumber
-        ? booking.phoneNumber.trim()
-        : booking.customerName.toLowerCase().trim();
+      const key = this.normalizeCustomerName(
+        booking.customerName
+      );
 
-      if (seen.has(key)) {
-        return false;
-      }
+      if (!key || seen.has(key)) return false;
 
       seen.add(key);
       return true;
@@ -555,25 +741,29 @@ export class CustomerService {
     customers: BookingRecord[],
     searchQuery: string
   ): BookingRecord[] {
-
     const query = searchQuery.toLowerCase().trim();
 
-    return customers.filter(customer => {
-      return (
-        !query ||
-        customer.customerName.toLowerCase().includes(query) ||
-        customer.phoneNumber.toLowerCase().includes(query) ||
-        (customer.email || '').toLowerCase().includes(query)
-      );
-    });
+    return customers.filter(customer =>
+      !query ||
+      customer.customerName.toLowerCase().includes(query) ||
+      customer.phoneNumber.toLowerCase().includes(query) ||
+      (customer.email || '').toLowerCase().includes(query)
+    );
   }
 
   getCustomerBookingCount(
     bookings: BookingRecord[],
-    phoneNumber: string
+    customerName: string
   ): number {
+    const normalizedName = this.normalizeCustomerName(customerName);
+
+    if (!normalizedName) {
+      return 0;
+    }
+
     return bookings.filter(
-      booking => booking.phoneNumber === phoneNumber
+      booking =>
+        this.normalizeCustomerName(booking.customerName) === normalizedName
     ).length;
   }
 
@@ -581,17 +771,61 @@ export class CustomerService {
     bookings: BookingRecord[],
     customer: BookingRecord
   ): BookingRecord[] {
+    const normalizedName =
+      this.normalizeCustomerName(customer.customerName);
 
-    return bookings.filter(booking => {
-      if (customer.phoneNumber) {
-        return booking.phoneNumber === customer.phoneNumber;
-      }
+    return bookings.filter(
+      booking =>
+        this.normalizeCustomerName(booking.customerName) ===
+        normalizedName
+    );
+  }
 
-      return (
-        booking.customerName.toLowerCase() ===
-        customer.customerName.toLowerCase()
+  // --------------------------------------------------
+  // CUSTOMER PROFILE DIRECTORY
+  // --------------------------------------------------
+
+  getUniqueCustomerProfiles(customers: Customer[]): Customer[] {
+    const seen = new Set<string>();
+
+    return customers.filter(customer => {
+      const key = this.normalizeCustomerName(
+        customer.customerName
       );
+
+      if (!key || seen.has(key)) return false;
+
+      seen.add(key);
+      return true;
     });
+  }
+
+  filterCustomerProfiles(
+    customers: Customer[],
+    searchQuery: string
+  ): Customer[] {
+    const query = searchQuery.toLowerCase().trim();
+
+    return customers.filter(customer =>
+      !query ||
+      customer.customerName.toLowerCase().includes(query) ||
+      customer.phoneNumber.toLowerCase().includes(query) ||
+      (customer.email || '').toLowerCase().includes(query)
+    );
+  }
+
+  getCustomerProfileBookings(
+    bookings: BookingRecord[],
+    customer: Customer
+  ): BookingRecord[] {
+    const normalizedName =
+      this.normalizeCustomerName(customer.customerName);
+
+    return bookings.filter(
+      booking =>
+        this.normalizeCustomerName(booking.customerName) ===
+        normalizedName
+    );
   }
 
   // --------------------------------------------------
@@ -608,10 +842,7 @@ export class CustomerService {
     const cells: CalendarCell[] = [];
 
     for (let i = 0; i < firstDay; i++) {
-      cells.push({
-        day: 0,
-        dateKey: ''
-      });
+      cells.push({ day: 0, dateKey: '' });
     }
 
     for (let day = 1; day <= daysInMonth; day++) {
@@ -619,10 +850,7 @@ export class CustomerService {
         new Date(year, monthIndex, day)
       );
 
-      cells.push({
-        day,
-        dateKey
-      });
+      cells.push({ day, dateKey });
     }
 
     return cells;

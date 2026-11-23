@@ -21,7 +21,7 @@
     }
   </div>
 
-  <!-- PAGE ALERTS: HIDDEN WHILE BOOKING DETAILS MODAL IS OPEN -->
+  <!-- PAGE ALERTS -->
   @if (errorMessage && !showBookingDetails) {
     <div class="error-banner">{{ errorMessage }}</div>
   }
@@ -130,8 +130,10 @@
             <select [(ngModel)]="statusFilter" class="filter-select">
               <option value="ALL">All Statuses</option>
 
-              @for (status of bookingStatusOptions; track status) {
-                <option [value]="status">{{ status }}</option>
+              @for (status of bookingStatusOptions; track status.id) {
+                <option [value]="status.name">
+                  {{ status.name }}
+                </option>
               }
             </select>
           </div>
@@ -214,41 +216,45 @@
         </div>
       </div>
 
-      <div class="table-responsive">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>Customer Name</th>
-              <th>Contact Number</th>
-              <th>Email</th>
-              <th>Address</th>
-              <th>Total Bookings</th>
-              <th>View</th>
-            </tr>
-          </thead>
+      @if (isLoadingCustomers) {
+        <div class="empty-table-cell">Loading customers...</div>
+      } @else {
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Customer Name</th>
+                <th>Contact Number</th>
+                <th>Email</th>
+                <th>Address</th>
+                <th>Total Bookings</th>
+                <th>View</th>
+              </tr>
+            </thead>
 
-          <tbody>
-            @for (customer of filteredCustomers; track customer.phoneNumber || customer.customerName) {
-              <tr>
-                <td>{{ customer.customerName }}</td>
-                <td>{{ customer.phoneNumber }}</td>
-                <td>{{ customer.email || '—' }}</td>
-                <td>{{ customer.address }}</td>
-                <td>{{ getCustomerBookingCount(customer.phoneNumber) }}</td>
-                <td>
-                  <button type="button" class="link-btn" (click)="openCustomerDetails(customer)">
-                    View
-                  </button>
-                </td>
-              </tr>
-            } @empty {
-              <tr>
-                <td colspan="6" class="empty-table-cell">No customers found.</td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
+            <tbody>
+              @for (customer of filteredCustomers; track customer.id) {
+                <tr>
+                  <td>{{ customer.customerName }}</td>
+                  <td>{{ customer.phoneNumber }}</td>
+                  <td>{{ customer.email || '—' }}</td>
+                  <td>{{ customer.address }}</td>
+                  <td>{{ getCustomerBookingCount(customer.customerName) }}</td>
+                  <td>
+                    <button type="button" class="link-btn" (click)="openCustomerDetails(customer)">
+                      View
+                    </button>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="6" class="empty-table-cell">No customers found.</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
     </div>
   }
 
@@ -464,18 +470,24 @@
           <div class="express-row">
             <div>
               <span class="express-title">Express Option</span>
-              <span class="express-sub">Priority processing (2× multiplier)</span>
+              <span class="express-sub">
+                Priority processing ({{ expressMultiplier }}× multiplier)
+              </span>
             </div>
 
             <label class="switch">
-              <input type="checkbox" name="isExpress" [(ngModel)]="form.isExpress">
+              <input
+                type="checkbox"
+                name="isExpress"
+                [(ngModel)]="form.isExpress"
+                [disabled]="!expressEnabled">
               <span class="slider"></span>
             </label>
           </div>
         </div>
 
+        <!-- PAYMENT AND SUMMARY -->
         @if (!isEditingBooking) {
-          <!-- PAYMENT AND SUMMARY -->
           <div class="card summary-card summary-payment-card">
             <div class="card-header-line">
               <h4 class="card-heading">Summary & Payment</h4>
@@ -502,8 +514,10 @@
 
                 <option value="">Select Payment Method</option>
 
-                @for (method of paymentMethodOptions; track method) {
-                  <option [value]="method">{{ method }}</option>
+                @for (method of paymentMethodOptions; track method.id) {
+                  <option [value]="method.name">
+                    {{ method.name }}
+                  </option>
                 }
               </select>
             </div>
@@ -549,7 +563,7 @@
               <span class="total-label">Calculated Charges</span>
               <div class="total-amount">{{ currency(grandTotal) }}</div>
               <p class="total-caption">
-                Base amount × {{ form.isExpress ? 2 : 1 }} multiplier
+                Base amount × {{ form.isExpress ? expressMultiplier : 1 }} multiplier
               </p>
             </div>
           </div>
@@ -650,11 +664,12 @@
                 selectedBooking.status === 'Cancelled' ||
                 selectedBooking.status === 'Done'
               ">
-              @for (status of bookingStatusOptions; track status) {
+
+              @for (status of bookingStatusOptions; track status.id) {
                 <option
-                  [value]="status"
-                  [disabled]="status === 'Cancelled'">
-                  {{ status }}
+                  [value]="status.name"
+                  [disabled]="status.name === 'Cancelled'">
+                  {{ status.name }}
                 </option>
               }
             </select>
@@ -802,8 +817,10 @@
 
               <option value="">Select Payment Method</option>
 
-              @for (method of paymentMethodOptions; track method) {
-                <option [value]="method">{{ method }}</option>
+              @for (method of paymentMethodOptions; track method.id) {
+                <option [value]="method.name">
+                  {{ method.name }}
+                </option>
               }
             </select>
           </div>
@@ -844,7 +861,7 @@
         </button>
       </div>
 
-      <!-- MODAL ALERTS AT THE BOTTOM -->
+      <!-- MODAL ALERTS -->
       @if (errorMessage || successMessage) {
         <div class="modal-feedback">
           @if (errorMessage) {
@@ -984,11 +1001,26 @@
       </div>
 
       <div class="receipt-totals">
-        <p><span>Total Charges</span><strong>{{ currency(receiptBooking.totalAmount) }}</strong></p>
-        <p><span>Amount Paid</span><strong>{{ currency(receiptBooking.amountPaid) }}</strong></p>
-        <p><span>Balance</span><strong>{{ currency(receiptBooking.balance) }}</strong></p>
-        <p><span>Payment Method</span><strong>{{ receiptBooking.paymentMethod || '—' }}</strong></p>
-        <p><span>Payment Status</span><strong>{{ receiptBooking.paymentStatus }}</strong></p>
+        <p>
+          <span>Total Charges</span>
+          <strong>{{ currency(receiptBooking.totalAmount) }}</strong>
+        </p>
+        <p>
+          <span>Amount Paid</span>
+          <strong>{{ currency(receiptBooking.amountPaid) }}</strong>
+        </p>
+        <p>
+          <span>Balance</span>
+          <strong>{{ currency(receiptBooking.balance) }}</strong>
+        </p>
+        <p>
+          <span>Payment Method</span>
+          <strong>{{ receiptBooking.paymentMethod || '—' }}</strong>
+        </p>
+        <p>
+          <span>Payment Status</span>
+          <strong>{{ receiptBooking.paymentStatus }}</strong>
+        </p>
       </div>
 
       <div class="receipt-thanks">Thank you for choosing LABA!</div>

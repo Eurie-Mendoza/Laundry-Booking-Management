@@ -5,6 +5,7 @@ import {
   inject,
   ChangeDetectorRef
 } from '@angular/core';
+import { forkJoin } from 'rxjs';
 
 import { BookingService } from '../services/booking.service';
 import {
@@ -33,14 +34,17 @@ export class ReportsComponent implements OnInit {
   isLoading = false;
   errorMessage = '';
 
-  readonly maximumCapacity = this.customerService.maximumCapacity;
+  // Retrieve the current capacity from CustomerService.
+  get maximumCapacity(): number {
+    return this.customerService.maximumCapacity;
+  }
 
   ngOnInit(): void {
     this.loadReports();
   }
 
   // --------------------------------------------------
-  // LOAD REPORT DATA
+  // LOAD REPORT DATA AND SHOP RULES
   // --------------------------------------------------
 
   loadReports(): void {
@@ -49,11 +53,26 @@ export class ReportsComponent implements OnInit {
 
     this.cdr.detectChanges();
 
-    this.bookingService.getBookings().subscribe({
+    forkJoin({
+      bookings: this.bookingService.getBookings(),
+      shopRules: this.customerService.getShopRules()
+    }).subscribe({
       next: data => {
-        this.bookings = data || [];
-        this.isLoading = false;
+        this.bookings = data.bookings || [];
 
+        const rules = data.shopRules?.[0];
+
+        if (!rules) {
+          this.errorMessage = 'Unable to load shop configuration.';
+          this.isLoading = false;
+          this.cdr.detectChanges();
+          return;
+        }
+
+        // Apply the latest shop configuration.
+        this.customerService.applyShopRules(rules);
+
+        this.isLoading = false;
         this.cdr.detectChanges();
       },
 
@@ -64,7 +83,6 @@ export class ReportsComponent implements OnInit {
           'Unable to load report information. Please check JSON Server.';
 
         this.isLoading = false;
-
         this.cdr.detectChanges();
       }
     });

@@ -1,86 +1,160 @@
 {
-  "bookings": [
+  "accounts": [
     {
-      "id": "LABA-2026-267158",
-      "bookingNumber": "LABA-2026-267158",
-      "customerName": "Eurie hshshshshsh",
-      "phoneNumber": "sadadsa",
-      "email": "sadsda",
-      "address": "dasdaadd",
-      "bookingDate": "2026-11-16",
-      "pickupDate": "2026-11-23",
-      "items": [
-        {
-          "serviceId": 2,
-          "itemCategoryId": 1,
-          "serviceName": "Dry Cleaning",
-          "categoryName": "Tops",
-          "weight": 3,
-          "pricePerKg": 120,
-          "subtotal": 360
-        }
-      ],
-      "totalWeight": 3,
-      "subtotal": 360,
-      "isExpress": true,
-      "expressMultiplier": 2,
-      "totalAmount": 720,
-      "amountPaid": 720,
-      "balance": 0,
-      "paymentStatus": "Paid",
-      "paymentMethod": "Cash",
-      "status": "Done",
-      "notes": "",
-      "createdAt": "2026-11-15T10:57:47.158Z",
-      "updatedAt": "2026-11-22T15:34:50.259Z",
-      "weightKg": 3,
-      "servicePrice": 360,
-      "completedAt": "2026-11-22T15:34:50.259Z"
+      "id": "1",
+      "username": "admin",
+      "password": "admin",
+      "role": "Admin",
+      "isActive": true
     },
     {
-      "id": "LABA-2026-928998",
-      "bookingNumber": "LABA-2026-928998",
-      "customerName": "jaun d",
-      "phoneNumber": "12312123",
-      "email": "",
-      "address": "sfzcaas",
-      "bookingDate": "2026-11-16",
-      "pickupDate": "2026-11-20",
+      "id": "2",
+      "username": "staff01",
+      "password": "staff01",
+      "role": "Staff",
+      "isActive": true
+    }
+  ],
+  "customers": [
+    {
+      "id": "CUS-1795423614455",
+      "customerName": "maria clara",
+      "phoneNumber": "09123456678",
+      "email": "eurietheone@yahoo.com",
+      "address": "sadasd"
+    },
+    {
+      "id": "CUS-1795423650088",
+      "customerName": "Juan Dela Cruz",
+      "phoneNumber": "09123456678",
+      "email": "eurietheone@yahoo.com",
+      "address": "fsafs"
+    },
+    {
+      "id": "CUS-1795427084774",
+      "customerName": "Eurie b",
+      "phoneNumber": "09123456789",
+      "email": "eurietheone@yahoo.com",
+      "address": "safasf"
+    }
+  ],
+  "bookings": [
+    {
+      "id": "LABA-2026-614260",
+      "bookingNumber": "LABA-2026-614260",
+      "customerName": "maria clara",
+      "phoneNumber": "09123456678",
+      "email": "eurietheone@yahoo.com",
+      "address": "sadasd",
+      "bookingDate": "2026-11-23",
+      "pickupDate": "2026-12-03",
       "items": [
         {
-          "serviceId": 4,
-          "itemCategoryId": 2,
-          "serviceName": "Comforter Wash",
-          "categoryName": "Bottoms",
-          "weight": 3,
-          "pricePerKg": 150,
-          "subtotal": 450
+          "serviceId": 1,
+          "itemCategoryId": 1,
+          "serviceName": "Wash & Fold",
+          "categoryName": "Tops",
+          "weight": 1,
+          "pricePerKg": 50,
+          "subtotal": 50
         }
       ],
-      "weightKg": 3,
-      "totalWeight": 3,
-      "servicePrice": 450,
-      "subtotal": 450,
-      "isExpress": true,
-      "expressMultiplier": 2,
-      "totalAmount": 900,
-      "amountPaid": 900,
-      "balance": 0,
-      "paymentStatus": "Paid",
+      "weightKg": 1,
+      "totalWeight": 1,
+      "servicePrice": 50,
+      "subtotal": 50,
+      "isExpress": false,
+      "expressMultiplier": 1,
+      "totalAmount": 50,
+      "amountPaid": 0,
+      "balance": 50,
+      "paymentStatus": "Unpaid",
       "paymentMethod": "Cash",
       "status": "Pending",
       "notes": "",
-      "createdAt": "2026-11-15T16:25:28.998Z",
-      "updatedAt": "2026-11-20T10:25:49.103Z"
+      "createdAt": "2026-11-23T08:46:54.260Z",
+      "updatedAt": "2026-11-23T08:46:54.260Z"
     },
     {
-      "id": "LABA-2026-413965",
-      "bookingNumber": "LABA-2026-413965",
-      "customerName": "mariabhhh",
-      "phoneNumber": "3445635636",
-      "email": "",
-      "address": "sdgsdsgsdsg",
-      "bookingDate": "2026-11-20",
+      "id": "LABA-2026-650059",
+      "bookingNumber": "LABA-2026-650059",
+      "customerName": "Juan Dela Cruz",
+      "phoneNumber": "09123456678",
+      "email": "eurietheone@yahoo.com",
+      "address": "sadasd",
+      "bookingDate": "2026-11-23",
+      "pickupDate": "2026-11-25",
+      "items": [
+        {
+          "serviceId": 1,
+          "itemCategoryId": 1,
+          "serviceName": "Wash & Fold",
+          "categoryName": "Tops",
+          "weight": 1,
+          "pricePerKg": 50,
+          "subtotal": 50
+        }
+      ],
+      "weightKg": 1,
+      "totalWeight": 1,
+      "servicePrice": 50,
+      "subtotal": 50,
+      "isExpress": true,
+      "expressMultiplier": 2,
+      "totalAmount": 100,
+      "amountPaid": 0,
+      "balance": 100,
+      "paymentStatus": "Unpaid",
+      "paymentMethod": "Bank Transfer",
+      "status": "Pending",
+      "notes": "",
+      "createdAt": "2026-11-23T08:47:30.059Z",
+      "updatedAt": "2026-11-23T08:47:30.059Z"
+    },
+    {
+      "id": "LABA-2026-669301",
+      "bookingNumber": "LABA-2026-669301",
+      "customerName": "Juan Dela Cruz",
+      "phoneNumber": "09123456789",
+      "email": "eurietheone@yahoo.com",
+      "address": "asdadasd",
+      "bookingDate": "2026-11-23",
+      "pickupDate": "2026-12-09",
+      "items": [
+        {
+          "serviceId": 1,
+          "itemCategoryId": 1,
+          "serviceName": "Wash & Fold",
+          "categoryName": "Tops",
+          "weight": 1,
+          "pricePerKg": 50,
+          "subtotal": 50
+        }
+      ],
+      "weightKg": 1,
+      "totalWeight": 1,
+      "servicePrice": 50,
+      "subtotal": 50,
+      "isExpress": false,
+      "expressMultiplier": 1,
+      "totalAmount": 50,
+      "amountPaid": 0,
+      "balance": 50,
+      "paymentStatus": "Unpaid",
+      "paymentMethod": "GCash",
+      "status": "Pending",
+      "notes": "",
+      "createdAt": "2026-11-23T08:47:49.301Z",
+      "updatedAt": "2026-11-23T08:47:49.301Z"
+    },
+    {
+      "id": "LABA-2026-896044",
+      "bookingNumber": "LABA-2026-896044",
+      "customerName": "Juan Dela Cruz",
+      "phoneNumber": "09123456678",
+      "email": "eurietheone@yahoo.com",
+      "address": "fsafs",
+      "bookingDate": "2026-11-23",
       "pickupDate": "2026-11-27",
       "items": [
         {
@@ -88,154 +162,46 @@
           "itemCategoryId": 1,
           "serviceName": "Wash & Fold",
           "categoryName": "Tops",
-          "weight": 3,
+          "weight": 1,
           "pricePerKg": 50,
-          "subtotal": 150
+          "subtotal": 50
         }
       ],
-      "weightKg": 3,
-      "totalWeight": 3,
-      "servicePrice": 150,
-      "subtotal": 150,
-      "isExpress": false,
-      "expressMultiplier": 1,
-      "totalAmount": 150,
-      "amountPaid": 150,
-      "balance": 0,
-      "paymentStatus": "Paid",
-      "paymentMethod": "Cash",
-      "status": "Pending",
-      "notes": "",
-      "createdAt": "2026-11-20T11:00:13.965Z",
-      "updatedAt": "2026-11-20T11:11:20.573Z"
-    },
-    {
-      "id": "LABA-2026-961154",
-      "bookingNumber": "LABA-2026-961154",
-      "customerName": "DARW ASAF",
-      "phoneNumber": "12435657688",
-      "email": "",
-      "address": "SAFAFAFS",
-      "bookingDate": "2026-11-20",
-      "pickupDate": "2026-11-21",
-      "items": [
-        {
-          "serviceId": 1,
-          "itemCategoryId": 1,
-          "serviceName": "Wash & Fold",
-          "categoryName": "Tops",
-          "weight": 5,
-          "pricePerKg": 50,
-          "subtotal": 250
-        }
-      ],
-      "weightKg": 5,
-      "totalWeight": 5,
-      "servicePrice": 250,
-      "subtotal": 250,
+      "weightKg": 1,
+      "totalWeight": 1,
+      "servicePrice": 50,
+      "subtotal": 50,
       "isExpress": true,
       "expressMultiplier": 2,
-      "totalAmount": 500,
+      "totalAmount": 100,
       "amountPaid": 0,
-      "balance": 500,
+      "balance": 100,
       "paymentStatus": "Unpaid",
-      "paymentMethod": "Cash",
-      "status": "In Progress",
+      "paymentMethod": "",
+      "status": "Cancelled",
       "notes": "",
-      "createdAt": "2026-11-20T11:26:01.154Z",
-      "updatedAt": "2026-11-22T16:49:09.886Z"
+      "createdAt": "2026-11-23T09:41:36.044Z",
+      "updatedAt": "2026-11-23T12:56:24.555Z",
+      "cancellationReason": "ewansfas"
     },
     {
-      "id": "LABA-2026-722058",
-      "bookingNumber": "LABA-2026-722058",
-      "customerName": "buni",
-      "phoneNumber": "7676776768",
-      "email": "",
-      "address": "sfaff",
-      "bookingDate": "2026-11-23",
-      "pickupDate": "2026-11-28",
-      "items": [
-        {
-          "serviceId": 1,
-          "itemCategoryId": 1,
-          "serviceName": "Wash & Fold",
-          "categoryName": "Tops",
-          "weight": 3,
-          "pricePerKg": 50,
-          "subtotal": 150
-        }
-      ],
-      "weightKg": 3,
-      "totalWeight": 3,
-      "servicePrice": 150,
-      "subtotal": 150,
-      "isExpress": true,
-      "expressMultiplier": 2,
-      "totalAmount": 300,
-      "amountPaid": 300,
-      "balance": 0,
-      "paymentStatus": "Paid",
-      "paymentMethod": "Cash",
-      "status": "In Progress",
-      "notes": "",
-      "createdAt": "2026-11-21T17:05:22.058Z",
-      "updatedAt": "2026-11-22T17:11:29.314Z"
-    },
-    {
-      "id": "LABA-2026-027023",
-      "bookingNumber": "LABA-2026-027023",
-      "customerName": "ere",
-      "phoneNumber": "98676878786868",
-      "email": "sdfsfd",
-      "address": "dsfdsf",
-      "bookingDate": "2026-11-23",
-      "pickupDate": "2026-11-30",
-      "items": [
-        {
-          "serviceId": 1,
-          "itemCategoryId": 1,
-          "serviceName": "Wash & Fold",
-          "categoryName": "Tops",
-          "weight": 20,
-          "pricePerKg": 50,
-          "subtotal": 1000
-        }
-      ],
-      "weightKg": 20,
-      "totalWeight": 20,
-      "servicePrice": 1000,
-      "subtotal": 1000,
-      "isExpress": false,
-      "expressMultiplier": 1,
-      "totalAmount": 1000,
-      "amountPaid": 213,
-      "balance": 787,
-      "paymentStatus": "Partially Paid",
-      "paymentMethod": "GCash",
-      "status": "Done",
-      "notes": "",
-      "createdAt": "2026-11-21T18:33:47.023Z",
-      "updatedAt": "2026-11-22T16:48:51.782Z",
-      "completedAt": "2026-11-22T16:48:51.782Z"
-    },
-    {
-      "id": "LABA-2026-239220",
-      "bookingNumber": "LABA-2026-239220",
-      "customerName": "jane",
-      "phoneNumber": "09123456678",
+      "id": "LABA-2026-084744",
+      "bookingNumber": "LABA-2026-084744",
+      "customerName": "Eurie b",
+      "phoneNumber": "09123456789",
       "email": "eurietheone@yahoo.com",
-      "address": "hahahaa",
+      "address": "safasf",
       "bookingDate": "2026-11-23",
-      "pickupDate": "2026-11-26",
+      "pickupDate": "2026-11-25",
       "items": [
         {
           "serviceId": 1,
           "itemCategoryId": 1,
           "serviceName": "Wash & Fold",
           "categoryName": "Tops",
-          "weight": 14,
+          "weight": 9,
           "pricePerKg": 50,
-          "subtotal": 700
+          "subtotal": 450
         },
         {
           "serviceId": 3,
@@ -247,22 +213,173 @@
           "subtotal": 240
         }
       ],
-      "weightKg": 20,
-      "totalWeight": 20,
-      "servicePrice": 940,
-      "subtotal": 940,
+      "weightKg": 15,
+      "totalWeight": 15,
+      "servicePrice": 690,
+      "subtotal": 690,
       "isExpress": true,
       "expressMultiplier": 2,
-      "totalAmount": 1880,
-      "amountPaid": 0,
-      "balance": 1880,
-      "paymentStatus": "Unpaid",
-      "paymentMethod": "",
-      "status": "Cancelled",
+      "totalAmount": 1380,
+      "amountPaid": 1380,
+      "balance": 0,
+      "paymentStatus": "Paid",
+      "paymentMethod": "Bank Transfer",
+      "status": "Done",
       "notes": "",
-      "createdAt": "2026-11-22T15:10:39.220Z",
-      "updatedAt": "2026-11-22T15:37:47.016Z",
-      "cancellationReason": "ewawn"
+      "createdAt": "2026-11-23T09:44:44.744Z",
+      "updatedAt": "2026-11-23T10:02:26.600Z",
+      "completedAt": "2026-11-23T10:02:18.337Z"
+    }
+  ],
+  "services": [
+    {
+      "id": 1,
+      "serviceName": "Wash & Fold",
+      "description": "Regular washing, drying, and folding of clothes.",
+      "pricePerKg": 50,
+      "isAvailable": true
+    },
+    {
+      "id": 2,
+      "serviceName": "Dry Cleaning",
+      "description": "Specialized cleaning for delicate garments.",
+      "pricePerKg": 120,
+      "isAvailable": true
+    },
+    {
+      "id": 3,
+      "serviceName": "Ironing",
+      "description": "Professional ironing and garment pressing.",
+      "pricePerKg": 40,
+      "isAvailable": true
+    }
+  ],
+  "itemCategories": [
+    {
+      "id": 1,
+      "categoryName": "Tops",
+      "description": "Shirts, blouses, t-shirts, and other upper garments.",
+      "isAvailable": true
+    },
+    {
+      "id": 2,
+      "categoryName": "Bottoms",
+      "description": "Pants, shorts, skirts, and other lower garments.",
+      "isAvailable": true
+    },
+    {
+      "id": 3,
+      "categoryName": "Bedding",
+      "description": "Bedsheets, pillowcases, blankets, and comforters.",
+      "isAvailable": true
+    }
+  ],
+  "bookingStatuses": [
+    {
+      "id": "1",
+      "code": "PENDING",
+      "name": "Pending",
+      "isActive": true
+    },
+    {
+      "id": "2",
+      "code": "IN_PROGRESS",
+      "name": "In Progress",
+      "isActive": true
+    },
+    {
+      "id": "3",
+      "code": "DONE",
+      "name": "Done",
+      "isActive": true
+    },
+    {
+      "id": "4",
+      "code": "CANCELLED",
+      "name": "Cancelled",
+      "isActive": true
+    }
+  ],
+  "paymentStatuses": [
+    {
+      "id": "1",
+      "code": "UNPAID",
+      "name": "Unpaid",
+      "isActive": true
+    },
+    {
+      "id": "2",
+      "code": "PARTIAL",
+      "name": "Partially Paid",
+      "isActive": true
+    },
+    {
+      "id": "3",
+      "code": "PAID",
+      "name": "Paid",
+      "isActive": true
+    }
+  ],
+  "paymentMethods": [
+    {
+      "id": "1",
+      "name": "Cash",
+      "isActive": true
+    },
+    {
+      "id": "2",
+      "name": "GCash",
+      "isActive": true
+    },
+    {
+      "id": "3",
+      "name": "Bank Transfer",
+      "isActive": true
+    },
+    {
+      "id": "4",
+      "name": "Maya",
+      "isActive": true
+    },
+    {
+      "id": "5",
+      "name": "Other",
+      "isActive": true
+    }
+  ],
+  "shopRules": [
+    {
+      "id": "1",
+      "minimumWeight": 1,
+      "maximumWeight": 20,
+      "maximumDailyBookingCapacity": 20,
+      "expressEnabled": true,
+      "expressMultiplier": 2,
+      "openingTime": "08:00",
+      "closingTime": "18:00",
+      "operatingDays": [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday"
+      ],
+      "closedDays": [
+        "Sunday"
+      ],
+      "allowSameDayBooking": true,
+      "allowCancellation": true,
+      "preventPastBookings": true
+    }
+  ],
+  "shopInformation": [
+    {
+      "id": "1",
+      "shopName": "LABA Laundry Shoooop",
+      "logoPath": "/WASH.png",
+      "projectName": "L.A.B.A",
+      "projectVersion": "1.0.0"
     }
   ]
 }

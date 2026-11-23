@@ -1,63 +1,127 @@
+// ==========================================
+// LABA - DATA MODELS AND INTERFACES
+// ==========================================
 
-export type BookingStatus =
-  | 'Pending'
-  | 'In Progress'
-  | 'Done'
-  | 'Cancelled';
+// ==========================================
+// ACCOUNT
+// ==========================================
 
-export type PaymentStatus =
-  | 'Unpaid'
-  | 'Partially Paid'
-  | 'Paid';
-
-export type PaymentMethod =
-  | 'Cash'
-  | 'GCash'
-  | 'Bank Transfer'
-  | 'Maya'
-  | 'paymaya'
-  | 'Other';
-
-  export const BOOKING_STATUS_OPTIONS: BookingStatus[] = [
-  'Pending',
-  'In Progress',
-  'Done',
-  'Cancelled'
-];
-
-export const PAYMENT_STATUS_OPTIONS: PaymentStatus[] = [
-  'Unpaid',
-  'Partially Paid',
-  'Paid'
-];
-
-export const PAYMENT_METHOD_OPTIONS: PaymentMethod[] = [
-  'Cash',
-  'GCash',
-  'Bank Transfer',
-  'Maya',
-  'paymaya',
-  'Other'
-];
-
-export const DEFAULT_DAILY_BOOKING_CAPACITY = 20;
+export type AccountRole = 'Admin' | 'Staff';
 
 export interface Account {
-  id: number;
+  id: string;
   username: string;
   password: string;
-  role: 'Admin' | 'Staff';
+  role: AccountRole;
+  isActive: boolean;
 }
+
+// ==========================================
+// CUSTOMER
+// ==========================================
+
+export interface Customer {
+  id: string;
+  customerName: string;
+  phoneNumber: string;
+  email: string;
+  address: string;
+}
+
+// ==========================================
+// BOOKING STATUS
+// ==========================================
+
+export interface BookingStatusOption {
+  id: string;
+  code: string;
+  name: string;
+  isActive: boolean;
+}
+
+// ==========================================
+// PAYMENT STATUS
+// ==========================================
+
+export interface PaymentStatusOption {
+  id: string;
+  code: string;
+  name: string;
+  isActive: boolean;
+}
+
+// ==========================================
+// PAYMENT METHOD
+// ==========================================
+
+export interface PaymentMethodOption {
+  id: string;
+  name: string;
+  isActive: boolean;
+}
+
+// ==========================================
+// BOOKING TYPES
+// ==========================================
+
+export type BookingStatus = string;
+
+export type PaymentStatus = string;
+
+export type PaymentMethod = string;
+
+// ==========================================
+// BOOKING ITEM
+// ==========================================
 
 export interface BookingItem {
   serviceId: number;
   itemCategoryId: number;
+
   serviceName: string;
   categoryName: string;
+
   weight: number;
   pricePerKg: number;
   subtotal: number;
 }
+
+// ==========================================
+// NOTIFICATION TYPES
+// ==========================================
+
+export type BookingNotificationType =
+  | 'warning'
+  | 'info'
+  | 'success'
+  | 'priority';
+
+export interface BookingNotification {
+  id: string;
+  title: string;
+  message: string;
+  type: BookingNotificationType;
+  bookingId: string;
+  date: string;
+}
+
+export type DashboardNotificationType =
+  | 'pending'
+  | 'progress'
+  | 'payment';
+
+export interface DashboardNotification {
+  title: string;
+  message: string;
+  bookingNumber: string;
+  date: string;
+  timestamp: number;
+  type: DashboardNotificationType;
+}
+
+// ==========================================
+// CUSTOMER BOOKING
+// ==========================================
 
 export interface CustomerBooking {
   id: string;
@@ -72,27 +136,35 @@ export interface CustomerBooking {
   pickupDate: string;
 
   items: BookingItem[];
-  totalWeight: number;
 
+  weightKg?: number;
+  totalWeight: number;
+  servicePrice?: number;
   subtotal: number;
+
   isExpress: boolean;
   expressMultiplier: number;
-  totalAmount: number;
 
+  totalAmount: number;
   amountPaid: number;
   balance: number;
+
   paymentStatus: PaymentStatus;
   paymentMethod: PaymentMethod;
 
   status: BookingStatus;
+
   cancellationReason?: string;
   notes: string;
-  
 
   createdAt: string;
   updatedAt?: string;
   completedAt?: string;
 }
+
+// ==========================================
+// LAUNDRY SERVICES
+// ==========================================
 
 export interface LaundryService {
   id: number;
@@ -102,6 +174,10 @@ export interface LaundryService {
   isAvailable: boolean;
 }
 
+// ==========================================
+// ITEM CATEGORIES
+// ==========================================
+
 export interface ItemCategory {
   id: number;
   categoryName: string;
@@ -109,50 +185,60 @@ export interface ItemCategory {
   isAvailable: boolean;
 }
 
+// ==========================================
+// SHOP INFORMATION
+// ==========================================
+
 export interface ShopInformation {
+  id: string;
   shopName: string;
   logoPath: string;
   projectName: string;
   projectVersion: string;
 }
 
+// ==========================================
+// SHOP RULES
+// ==========================================
+
 export interface ShopRules {
+  id: string;
+
   minimumWeight: number;
   maximumWeight: number;
-  maximumcapacity: number;
+
+  maximumDailyBookingCapacity: number;
+
   expressEnabled: boolean;
   expressMultiplier: number;
+
   openingTime: string;
   closingTime: string;
+
   operatingDays: string[];
   closedDays: string[];
+
   allowSameDayBooking: boolean;
   allowCancellation: boolean;
   preventPastBookings: boolean;
-
 }
+
+// ==========================================
+// COMPLETE LABA DATABASE STRUCTURE
+// ==========================================
 
 export interface LABAData {
-  shop: ShopInformation;
-  rules: ShopRules;
   accounts: Account[];
+  customers: Customer[];
+  bookings: CustomerBooking[];
+
   services: LaundryService[];
   itemCategories: ItemCategory[];
-}
 
-export interface ActivityLog {
-  id: string;
-  action: string;
-  description: string;
-  date: string;
-  user: string;
-}
+  bookingStatuses: BookingStatusOption[];
+  paymentStatuses: PaymentStatusOption[];
+  paymentMethods: PaymentMethodOption[];
 
-export interface BookingNotification {
-  id: string;
-  title: string;
-  message: string;
-  type: 'info' | 'warning' | 'success' | 'priority';
-  bookingId?: string;
-  date: string;
+  shopRules: ShopRules[];
+  shopInformation: ShopInformation[];
 }

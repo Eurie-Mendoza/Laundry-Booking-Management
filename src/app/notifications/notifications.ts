@@ -1,5 +1,5 @@
-
 import { CommonModule } from '@angular/common';
+
 import {
   Component,
   Input,
@@ -10,7 +10,9 @@ import {
   inject
 } from '@angular/core';
 
-import { CustomerBooking, BookingNotification } from '../rules';
+import { CustomerBooking } from '../rules';
+import type { BookingNotification } from '../rules';
+
 import { NotificationService } from '../notification';
 
 @Component({
