@@ -26,6 +26,15 @@ export interface Customer {
   phoneNumber: string;
   email: string;
   address: string;
+  firstName?: string;
+  lastName?: string;
+  middleName?: string;
+  suffix?: string;
+  houseNo?: string;
+  street?: string;
+  barangay?: string;
+  city?: string;
+  province?: string;
 }
 
 // ==========================================
@@ -131,6 +140,17 @@ export interface CustomerBooking {
   phoneNumber: string;
   email?: string;
   address: string;
+
+  firstName?: string;
+  lastName?: string;
+  middleName?: string;
+  suffix?: string;
+
+  houseNo?: string;
+  street?: string;
+  barangay?: string;
+  city?: string;
+  province?: string;
 
   bookingDate: string;
   pickupDate: string;

@@ -1543,3 +1543,444 @@ textarea.input-field {
   }
 }
 
+
+
+/* =========================================
+   ADD BOOKING - CUSTOMER NAME AND ADDRESS
+========================================= */
+
+.customer-name-grid,
+.address-fields-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 12px;
+}
+
+.customer-name-grid .field-box,
+.address-fields-grid .field-box {
+  min-width: 0;
+}
+
+@media (max-width: 520px) {
+  .customer-name-grid,
+  .address-fields-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+
+/* Booking wizard */
+.booking-form-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto;
+  gap: 20px;
+  align-items: start;
+}
+.booking-form-grid .details-card,
+.booking-form-grid .service-card,
+.booking-form-grid .parameter-card,
+.booking-form-grid .summary-payment-card {
+  grid-column: 1;
+  grid-row: auto;
+}
+.booking-stepper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin: 8px 0 22px;
+  padding: 16px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+}
+.booking-step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #94a3b8;
+  font-size: 12px;
+  font-weight: 600;
+}
+.booking-step span {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #e2e8f0;
+  color: #475569;
+  font-weight: 700;
+}
+/* =========================================
+   RECEIPT - LAUNDRY ITEMS TABLE
+   Display all items without an inner scrollbar
+========================================= */
+
+.receipt-modal .table-responsive {
+  width: 100%;
+  max-width: 100%;
+  overflow: visible !important;
+}
+
+.receipt-modal .receipt-table {
+  width: 100%;
+  min-width: 0 !important;
+  table-layout: fixed;
+  white-space: normal;
+  border-collapse: collapse;
+}
+
+.receipt-modal .receipt-table th,
+.receipt-modal .receipt-table td {
+  padding: 10px 6px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  vertical-align: top;
+}
+
+/* Set column widths */
+.receipt-modal .receipt-table th:nth-child(1),
+.receipt-modal .receipt-table td:nth-child(1) {
+  width: 25%;
+}
+
+.receipt-modal .receipt-table th:nth-child(2),
+.receipt-modal .receipt-table td:nth-child(2) {
+  width: 25%;
+}
+
+.receipt-modal .receipt-table th:nth-child(3),
+.receipt-modal .receipt-table td:nth-child(3) {
+  width: 20%;
+}
+
+.receipt-modal .receipt-table th:nth-child(4),
+.receipt-modal .receipt-table td:nth-child(4) {
+  width: 30%;
+}
+
+/* Smaller screens */
+@media (max-width: 480px) {
+  .receipt-modal .receipt-table th,
+  .receipt-modal .receipt-table td {
+    padding: 8px 4px;
+    font-size: 9px;
+  }
+}
+.booking-step.active, .booking-step.completed { color: #0f766e; }
+.booking-step.active span, .booking-step.completed span { background: #0f766e; color: #fff; }
+.booking-step-line { width: clamp(18px, 8vw, 72px); height: 2px; background: #e2e8f0; }
+.load-weight-display { display: block; margin-top: 5px; color: #0f766e; font-size: 12px; font-weight: 700; }
+.step-navigation { display: flex; flex-direction: row; justify-content: flex-end; align-items: center; gap: 10px; }
+.step-navigation button { min-width: 125px; }
+@media (max-width: 600px) {
+  .booking-stepper { gap: 5px; padding: 10px 6px; }
+  .booking-step { flex-direction: column; gap: 4px; text-align: center; font-size: 10px; }
+  .booking-step-line { width: 14px; }
+  .step-navigation { flex-wrap: wrap; }
+}
+
+/* =========================================
+   BOOKING RECORDS - INTERNAL SCROLLBAR
+========================================= */
+
+.booking-records-scroll {
+  width: 100%;
+  height: 430px;
+  max-height: 430px;
+  overflow: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 9px;
+  scrollbar-width: thin;
+  scrollbar-color: #94a3b8 #f1f5f9;
+}
+
+/* Keep table headings visible while scrolling */
+.booking-records-scroll .data-table {
+  min-width: 850px;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.booking-records-scroll .data-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: #f1f8fa;
+}
+
+/* Scrollbar appearance */
+.booking-records-scroll::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.booking-records-scroll::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 10px;
+}
+
+.booking-records-scroll::-webkit-scrollbar-thumb {
+  background: #94a3b8;
+  border-radius: 10px;
+}
+
+.booking-records-scroll::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
+
+/* =========================================
+   BOOKING CALENDAR - STICKY HEADER
+========================================= */
+
+.booking-calendar-card {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  align-self: stretch;
+  transition:
+    padding 0.25s ease,
+    box-shadow 0.25s ease,
+    border-radius 0.25s ease;
+  background: #ffffff;
+}
+
+/*
+  Modern Chrome supports scroll-driven animations.
+  The calendar becomes compact as the page scrolls.
+*/
+@supports (animation-timeline: scroll()) {
+
+  .booking-calendar-card {
+    animation: compact-booking-calendar linear both;
+    animation-timeline: scroll(root block);
+    animation-range: 0px 220px;
+  }
+
+  @keyframes compact-booking-calendar {
+    from {
+      padding-top: 16px;
+      padding-bottom: 16px;
+      box-shadow: 0 2px 8px rgba(15, 23, 42, .025);
+    }
+
+    to {
+      padding-top: 6px;
+      padding-bottom: 6px;
+      box-shadow: 0 5px 16px rgba(15, 23, 42, .12);
+    }
+  }
+
+  .booking-calendar-card .calendar-day,
+  .booking-calendar-card .calendar-empty {
+    animation: compact-calendar-days linear both;
+    animation-timeline: scroll(root block);
+    animation-range: 0px 220px;
+  }
+
+  @keyframes compact-calendar-days {
+    from {
+      height: 32px;
+    }
+
+    to {
+      height: 22px;
+    }
+  }
+
+  .booking-calendar-card .calendar-preview {
+    animation: compact-calendar-preview linear both;
+    animation-timeline: scroll(root block);
+    animation-range: 0px 180px;
+  }
+
+  @keyframes compact-calendar-preview {
+    from {
+      opacity: 1;
+      max-height: 180px;
+      margin-top: 10px;
+      padding-top: 10px;
+      padding-bottom: 10px;
+    }
+
+    to {
+      opacity: 0;
+      max-height: 0;
+      margin-top: 0;
+      padding-top: 0;
+      padding-bottom: 0;
+      overflow: hidden;
+    }
+  }
+}
+
+
+/* =========================================
+   RESPONSIVE BOOKING RECORDS
+========================================= */
+
+@media (max-width: 768px) {
+  .booking-records-scroll {
+    height: 380px;
+    max-height: 380px;
+  }
+
+  .booking-calendar-card {
+    top: 0;
+  }
+}
+
+/* =========================================
+   BOOKING RECORDS - INTERNAL SCROLLBAR
+========================================= */
+
+.booking-records-scroll {
+  width: 100%;
+  height: 430px;
+  max-height: 430px;
+  overflow: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 9px;
+  scrollbar-width: thin;
+  scrollbar-color: #94a3b8 #f1f5f9;
+}
+
+/* Keep table headings visible while scrolling */
+.booking-records-scroll .data-table {
+  min-width: 850px;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.booking-records-scroll .data-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: #f1f8fa;
+}
+
+/* Scrollbar appearance */
+.booking-records-scroll::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.booking-records-scroll::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 10px;
+}
+
+.booking-records-scroll::-webkit-scrollbar-thumb {
+  background: #94a3b8;
+  border-radius: 10px;
+}
+
+.booking-records-scroll::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
+
+/* =========================================
+   BOOKING CALENDAR - STICKY HEADER
+========================================= */
+
+.booking-calendar-card {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  align-self: stretch;
+  transition:
+    padding 0.25s ease,
+    box-shadow 0.25s ease,
+    border-radius 0.25s ease;
+  background: #ffffff;
+}
+
+/*
+  Modern Chrome supports scroll-driven animations.
+  The calendar becomes compact as the page scrolls.
+*/
+@supports (animation-timeline: scroll()) {
+
+  .booking-calendar-card {
+    animation: compact-booking-calendar linear both;
+    animation-timeline: scroll(root block);
+    animation-range: 0px 220px;
+  }
+
+  @keyframes compact-booking-calendar {
+    from {
+      padding-top: 16px;
+      padding-bottom: 16px;
+      box-shadow: 0 2px 8px rgba(15, 23, 42, .025);
+    }
+
+    to {
+      padding-top: 6px;
+      padding-bottom: 6px;
+      box-shadow: 0 5px 16px rgba(15, 23, 42, .12);
+    }
+  }
+
+  .booking-calendar-card .calendar-day,
+  .booking-calendar-card .calendar-empty {
+    animation: compact-calendar-days linear both;
+    animation-timeline: scroll(root block);
+    animation-range: 0px 220px;
+  }
+
+  @keyframes compact-calendar-days {
+    from {
+      height: 32px;
+    }
+
+    to {
+      height: 22px;
+    }
+  }
+
+  .booking-calendar-card .calendar-preview {
+    animation: compact-calendar-preview linear both;
+    animation-timeline: scroll(root block);
+    animation-range: 0px 180px;
+  }
+
+  @keyframes compact-calendar-preview {
+    from {
+      opacity: 1;
+      max-height: 180px;
+      margin-top: 10px;
+      padding-top: 10px;
+      padding-bottom: 10px;
+    }
+
+    to {
+      opacity: 0;
+      max-height: 0;
+      margin-top: 0;
+      padding-top: 0;
+      padding-bottom: 0;
+      overflow: hidden;
+    }
+  }
+}
+
+
+/* =========================================
+   RESPONSIVE BOOKING RECORDS
+========================================= */
+
+@media (max-width: 768px) {
+  .booking-records-scroll {
+    height: 380px;
+    max-height: 380px;
+  }
+
+  .booking-calendar-card {
+    top: 0;
+  }
+}

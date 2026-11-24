@@ -29,6 +29,8 @@ import {
   PaymentStatusOption
 } from '../rules';
 
+type BookingFormLoadItem = BookingFormItem & { loads: number; loadsChanged?: boolean };
+
 @Component({
   selector: 'app-customer',
   standalone: true,
@@ -37,6 +39,10 @@ import {
   styleUrl: './customer.css'
 })
 export class CustomerComponent implements OnInit {
+
+  readonly kilogramsPerLoad = 7;
+  currentBookingStep: 1 | 2 | 3 = 1;
+  bookingDateSort: 'asc' | 'desc' = 'desc';
 
   private readonly bookingService = inject(BookingService);
   private readonly customerService = inject(CustomerService);
@@ -119,10 +125,17 @@ export class CustomerComponent implements OnInit {
 
   private createEmptyForm() {
     return {
-      customerName: '',
+      firstName: '',
+      lastName: '',
+      middleName: '',
+      suffix: '',
       phoneNumber: '',
       email: '',
-      address: '',
+      houseNo: '',
+      street: '',
+      barangay: '',
+      city: '',
+      province: '',
       bookingDate: this.getNextValidDate(),
       pickupDate: '',
       isExpress: false,
@@ -133,9 +146,66 @@ export class CustomerComponent implements OnInit {
         {
           serviceId: this.services[0]?.id ?? 0,
           itemCategoryId: this.categories[0]?.id ?? 0,
+          loads: 0,
+          loadsChanged: false,
           weight: 0
         }
-      ] as BookingFormItem[]
+      ] as BookingFormLoadItem[]
+    };
+  }
+
+  private composeCustomerName(): string {
+    return [
+      this.form.firstName,
+      this.form.middleName,
+      this.form.lastName,
+      this.form.suffix
+    ]
+      .map(value => String(value || '').trim())
+      .filter(Boolean)
+      .join(' ');
+  }
+
+  private composeCustomerAddress(): string {
+    return [
+      this.form.houseNo,
+      this.form.street,
+      this.form.barangay,
+      this.form.city,
+      this.form.province
+    ]
+      .map(value => String(value || '').trim())
+      .filter(Boolean)
+      .join(', ');
+  }
+
+  private splitLegacyCustomerName(name: string): {
+    firstName: string;
+    middleName: string;
+    lastName: string;
+    suffix: string;
+  } {
+    const parts = String(name || '').trim().split(/\\s+/).filter(Boolean);
+
+    if (parts.length <= 1) {
+      return {
+        firstName: parts[0] || '',
+        middleName: '',
+        lastName: '',
+        suffix: ''
+      };
+    }
+
+    const suffixPattern = /^(jr\\.?|sr\\.?|ii|iii|iv|v)$/i;
+    const suffix = suffixPattern.test(parts[parts.length - 1])
+      ? parts.pop() || ''
+      : '';
+
+    return {
+      firstName: parts[0] || '',
+      middleName: parts.length > 2 ? parts.slice(1, -1).join(' ') : '',
+      lastName: parts.length > 1 ? parts[parts.length - 1] : '',
+      suffix
     };
   }
 
@@ -556,7 +626,10 @@ export class CustomerComponent implements OnInit {
     return (
       this.form.items.length > 0 &&
       this.form.items.every(item =>
-        Number(item.weight) > 0 &&
+        Number.isInteger(Number((item as BookingFormLoadItem).loads)) &&
+        Number((item as BookingFormLoadItem).loads) > 0 &&
+        (!(item as BookingFormLoadItem).loadsChanged ||
+          Number(item.weight) === Number((item as BookingFormLoadItem).loads) * this.kilogramsPerLoad) &&
         this.getServicePrice(item.serviceId) > 0 &&
         this.categories.some(
           category =>
@@ -573,19 +646,95 @@ export class CustomerComponent implements OnInit {
     );
   }
 
-  get isFormValid(): boolean {
-    const paid = Number(this.form.amountPaid || 0);
+  get isAddressValid(): boolean {
+    const hasCompleteAddress = [
+      this.form.houseNo,
+      this.form.street,
+      this.form.barangay,
+      this.form.city,
+      this.form.province
+    ].every(value => String(value || '').trim().length > 0);
 
+    // Older bookings only contain one combined address string.
+    // Keep those editable without forcing users to guess the missing parts.
+    const isLegacyAddress =
+      this.isEditingBooking &&
+      String(this.form.street || '').trim().length >= 3 &&
+      !this.form.houseNo.trim() &&
+      !this.form.barangay.trim() &&
+      !this.form.city.trim() &&
+      !this.form.province.trim();
+
+    return hasCompleteAddress || isLegacyAddress;
+  }
+
+  get isCustomerAndBookingValid(): boolean {
+    return (
+      this.form.firstName.trim().length >= 1 &&
+      this.form.lastName.trim().length >= 1 &&
+      !this.phoneError &&
+      !this.emailError &&
+      this.isAddressValid &&
+      this.validateBookingDate(this.form.bookingDate).valid &&
+      this.validatePickupDate(
+        this.form.bookingDate,
+        this.form.pickupDate,
+        this.form.isExpress
+      ).valid &&
+      !this.pickupCapacityError &&
+      (!this.form.isExpress || this.expressEnabled)
+    );
+  }
+
+  goToNextBookingStep(): void {
+    this.errorMessage = '';
+
+    if (this.currentBookingStep === 1) {
+      if (!this.isCustomerAndBookingValid) {
+        this.errorMessage = this.pickupCapacityError ||
+          'Please complete and correct the customer details and booking parameters before continuing.';
+        return;
+      }
+      this.currentBookingStep = 2;
+      return;
+    }
+
+    if (this.currentBookingStep === 2) {
+      if (!this.isItemsValid || !this.isWeightValid) {
+        this.errorMessage = this.weightError ||
+          'Please add at least one valid laundry service and enter whole-number loads.';
+        return;
+      }
+      this.currentBookingStep = 3;
+    }
+  }
+
+  goToPreviousBookingStep(): void {
+    this.errorMessage = '';
+    if (this.currentBookingStep > 1) {
+      this.currentBookingStep = (this.currentBookingStep - 1) as 1 | 2 | 3;
+    }
+  }
+
+  updateItemLoads(item: BookingFormLoadItem, value: number | string): void {
+    const loads = Number(value);
+    item.loads = Number.isInteger(loads) && loads >= 0 ? loads : 0;
+    item.loadsChanged = true;
+    item.weight = item.loads * this.kilogramsPerLoad;
+  }
+
+  get isFormValid(): boolean {
     return (
       !this.isConfigurationLoading &&
       this.services.length > 0 &&
       this.categories.length > 0 &&
       this.bookingStatusOptions.length > 0 &&
       this.paymentStatusOptions.length > 0 &&
-      this.form.customerName.trim().length >= 2 &&
+      this.form.firstName.trim().length >= 1 &&
+      this.form.lastName.trim().length >= 1 &&
       !this.phoneError &&
       !this.emailError &&
-      this.form.address.trim().length >= 3 &&
+      this.isAddressValid &&
       this.isItemsValid &&
       this.isWeightValid &&
       this.validateBookingDate(this.form.bookingDate).valid &&
@@ -595,14 +744,7 @@ export class CustomerComponent implements OnInit {
         this.form.isExpress
       ).valid &&
       !this.pickupCapacityError &&
-      Number.isFinite(paid) &&
-      paid >= 0 &&
-      paid <= this.grandTotal &&
-      (!this.form.isExpress || this.expressEnabled) &&
-      (
-        paid === 0 ||
-        this.form.paymentMethod !== ''
-      )
+      (!this.form.isExpress || this.expressEnabled)
     );
   }
 
@@ -618,8 +760,10 @@ export class CustomerComponent implements OnInit {
     this.form.items.push({
       serviceId: this.services[0]?.id ?? 0,
       itemCategoryId: this.categories[0]?.id ?? 0,
+      loads: 0,
+      loadsChanged: false,
       weight: 0
-    });
+    } as BookingFormLoadItem);
   }
 
   removeItemRow(index: number): void {
@@ -630,6 +774,7 @@ export class CustomerComponent implements OnInit {
 
   resetForm(): void {
     this.form = this.createEmptyForm();
+    this.currentBookingStep = 1;
 
     this.isEditingBooking = false;
     this.editingBookingId = null;
@@ -698,7 +843,16 @@ export class CustomerComponent implements OnInit {
           customerName: booking.customerName.trim(),
           phoneNumber: booking.phoneNumber.trim(),
           email: booking.email?.trim() || '',
-          address: booking.address.trim()
+          address: booking.address.trim(),
+          firstName: booking.firstName || '',
+          lastName: booking.lastName || '',
+          middleName: booking.middleName || '',
+          suffix: booking.suffix || '',
+          houseNo: booking.houseNo || '',
+          street: booking.street || '',
+          barangay: booking.barangay || '',
+          city: booking.city || '',
+          province: booking.province || ''
         };
 
         const request = existingCustomer
@@ -780,6 +934,12 @@ export class CustomerComponent implements OnInit {
       return;
     }
 
+    // Prevent Enter-key submission from skipping the wizard steps.
+    if (this.currentBookingStep !== 3) {
+      this.goToNextBookingStep();
+      return;
+    }
+
     this.errorMessage = '';
     this.successMessage = '';
 
@@ -846,16 +1006,29 @@ export class CustomerComponent implements OnInit {
       };
     });
 
-    const amountPaid = Number(this.form.amountPaid || 0);
+    // New bookings are created as unpaid. Payments can be recorded later
+    // from the booking details payment section.
+    const amountPaid = this.isEditingBooking
+      ? Number(this.form.amountPaid || 0)
+      : 0;
 
     const booking = {
       id: bookingNumber,
       bookingNumber,
 
-      customerName: this.form.customerName.trim(),
+      customerName: this.composeCustomerName(),
+      firstName: this.form.firstName.trim(),
+      lastName: this.form.lastName.trim(),
+      middleName: this.form.middleName.trim(),
+      suffix: this.form.suffix.trim(),
       phoneNumber: this.form.phoneNumber.trim(),
       email: this.form.email.trim(),
-      address: this.form.address.trim(),
+      address: this.composeCustomerAddress(),
+      houseNo: this.form.houseNo.trim(),
+      street: this.form.street.trim(),
+      barangay: this.form.barangay.trim(),
+      city: this.form.city.trim(),
+      province: this.form.province.trim(),
 
       bookingDate: this.form.bookingDate,
       pickupDate: this.form.pickupDate,
@@ -878,7 +1051,9 @@ export class CustomerComponent implements OnInit {
       balance: this.balance,
 
       paymentStatus: this.currentPaymentStatus,
-      paymentMethod: this.form.paymentMethod,
+      paymentMethod: this.isEditingBooking
+        ? this.form.paymentMethod
+        : '', 
 
       status: (pendingStatus?.name || '') as BookingStatus,
       notes: this.form.notes.trim(),
@@ -927,6 +1102,7 @@ export class CustomerComponent implements OnInit {
             this.editingBookingId = null;
 
             this.form = this.createEmptyForm();
+            this.currentBookingStep = 1;
             this.subView = 'records';
 
             this.successMessage =
@@ -963,6 +1139,7 @@ export class CustomerComponent implements OnInit {
 
           this.isSaving = false;
           this.form = this.createEmptyForm();
+          this.currentBookingStep = 1;
           this.subView = 'records';
 
           this.successMessage =
@@ -989,11 +1166,18 @@ export class CustomerComponent implements OnInit {
   // --------------------------------------------------
 
   get filteredBookings(): BookingRecord[] {
-    return this.customerService.filterBookings(
+    const filtered = this.customerService.filterBookings(
       this.bookings,
       this.searchQuery,
       this.statusFilter
     );
+
+    return [...filtered].sort((a, b) => {
+      const dateA = new Date(a.bookingDate).getTime();
+      const dateB = new Date(b.bookingDate).getTime();
+      const difference = dateA - dateB;
+      return this.bookingDateSort === 'asc' ? difference : -difference;
+    });
   }
 
   getBookingServiceNames(booking: BookingRecord): string {
@@ -1421,22 +1605,40 @@ export class CustomerComponent implements OnInit {
     this.isEditingBooking = true;
     this.editingBookingId = booking.id;
 
+    const legacyName = this.splitLegacyCustomerName(
+      booking.customerName
+    );
+
     this.form = {
-      customerName: booking.customerName,
+      firstName: booking.firstName || legacyName.firstName,
+      lastName: booking.lastName || legacyName.lastName,
+      middleName: booking.middleName || legacyName.middleName,
+      suffix: booking.suffix || legacyName.suffix,
       phoneNumber: booking.phoneNumber,
       email: booking.email || '',
-      address: booking.address,
+      houseNo: booking.houseNo || '',
+      street: booking.street || booking.address || '',
+      barangay: booking.barangay || '',
+      city: booking.city || '',
+      province: booking.province || '',
       bookingDate: booking.bookingDate,
       pickupDate: booking.pickupDate,
       isExpress: booking.isExpress && this.expressEnabled,
       amountPaid: booking.amountPaid,
       paymentMethod: booking.paymentMethod || '',
       notes: booking.notes || '',
-      items: booking.items.map(item => ({
-        serviceId: item.serviceId,
-        itemCategoryId: item.itemCategoryId,
-        weight: item.weight
-      }))
+      items: booking.items.map(item => {
+        const loads = Number(item.weight) > 0
+          ? Math.ceil(Number(item.weight) / this.kilogramsPerLoad)
+          : 0;
+        return {
+          serviceId: item.serviceId,
+          itemCategoryId: item.itemCategoryId,
+          loads,
+          loadsChanged: false,
+          weight: Number(item.weight)
+        } as BookingFormLoadItem;
+      })
     };
 
     this.errorMessage = '';
@@ -1446,6 +1648,7 @@ export class CustomerComponent implements OnInit {
     this.showCancellationForm = false;
     this.selectedBooking = null;
 
+    this.currentBookingStep = 1;
     this.subView = 'add';
   }
 
